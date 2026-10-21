@@ -9,11 +9,15 @@ name: qualiflow
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    # Prometheus-style custom image: the init script only needs to exist
+    # on first startup against a fresh volume, so build: works the same
+    # whether the daemon is local or remote.
+    build: ./infra/postgres
     environment:
       POSTGRES_USER: ${QUALIFLOW_PG_USER}
       POSTGRES_PASSWORD: ${QUALIFLOW_PG_PASSWORD}
       POSTGRES_DB: ${QUALIFLOW_PG_DB}
+      QUALIFLOW_PG_APP_PASSWORD: ${QUALIFLOW_PG_APP_PASSWORD}
     ports:
       - "${QUALIFLOW_PG_PORT}:5432"
     volumes:

@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  ci:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -30,5 +30,59 @@ jobs:
 
       # No .env needed here — Settings() has defaults safe for import,
       # and these tests never call the real Keycloak (see test_main.py).
-      - name: pytest (apps/api)
-        run: uv run --project apps/api pytest apps/api/tests -v
+      # --ignore excludes the integration/ subfolder, which needs the
+      # real Postgres from the job below — never mocked here.
+      - name: pytest (apps/api, unit only)
+        run: uv run --project apps/api pytest apps/api/tests --ignore=apps/api/tests/integration -v
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: qualiflow
+          POSTGRES_PASSWORD: ci_pw
+          POSTGRES_DB: qualiflow
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      QUALIFLOW_PG_HOST: localhost
+      QUALIFLOW_PG_PORT: 5433
+      QUALIFLOW_PG_USER: qualiflow
+      QUALIFLOW_PG_PASSWORD: ci_pw
+      QUALIFLOW_PG_APP_PASSWORD: ci_app_pw
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv (Python tooling)
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install apps/api dependencies (incl. dev group)
+        run: uv sync --project apps/api --group dev
+
+      # GitHub Actions can't build infra/postgres/Dockerfile as a
+      # `services:` image directly (that only pulls pre-built images),
+      # so this step does by hand exactly what
+      # infra/postgres/init-app-role.sh does on a real deploy: create
+      # the restricted, non-superuser role the app itself connects as.
+      # It must run before migrations, since the migration GRANTs to
+      # this role and that fails if the role doesn't exist yet.
+      - name: Create restricted app role (mirrors infra/postgres/init-app-role.sh)
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=ci_pw psql -h localhost -p 5433 -U qualiflow -d qualiflow -c \
+            "CREATE ROLE qualiflow_app LOGIN PASSWORD 'ci_app_pw'; GRANT CONNECT ON DATABASE qualiflow TO qualiflow_app;"
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+
+      - name: pytest (apps/api, integration — real Postgres, real RLS)
+        run: uv run --project apps/api pytest apps/api/tests/integration -v
