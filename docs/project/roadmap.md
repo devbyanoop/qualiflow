@@ -111,6 +111,18 @@ M0.3's `__init__.py` fix (`asyncio.set_event_loop_policy(WindowsSelectorEventLoo
 
 **CI gap closed along the way:** GitHub Actions' `services:` has no way to pass CLI arguments to a container. Confirmed via the TEI image's own `--help` that every flag has an environment-variable equivalent (`--model-id` → `MODEL_ID`), tested locally before trusting it in CI.
 
-## M0.7 – M0.10 — Walking Skeleton
+## M0.7 — First real generation ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: first generation, the human review gate, first automated script, and minimal evidence hashing.
+- [x] `generate_tests.py`: `retrieve_context` (real async DB read, org-scoped) → `draft_manual_cases` (real Groq call, `qf-balanced` tier, strict structured output into `ManualTestCase`). Exposed via `POST /generate`.
+- [x] **Done when, proven for real:** generated a case for NovaPay's transfer rule that genuinely reflects the retrieved requirement — correct ref-number format, atomic debit/credit, transaction-history entries — not a generic hallucinated case.
+- [x] Full test matrix, all real (no mocking), in `apps/agents/tests/integration/test_generate_tests.py`:
+  - **Positive:** generated case is grounded in the specific requirement text (asserts requirement-specific content appears, not just "a case exists").
+  - **Negative:** missing chunk → `ChunkNotFoundError`, not a silent empty result or a crash.
+  - **Edge:** empty instruction string still degrades gracefully; malformed request → FastAPI's own 422 (verified manually).
+  - **Edge / regression guard:** RLS isolation holds for this *new* read path too (a different org_id with the same `feature_id` must not see another org's chunk) — the same mechanism M0.3 proved, now confirmed for a second consumer of `knowledge_chunks`.
+
+**Bug caught by actually running the test suite, not just the manual curl checks:** `apps/agents/__init__.py` never got the Windows event-loop policy fix from M0.6 — this package didn't touch a database until `generate_tests.py` just now. All four tests failed identically with the same `ProactorEventLoop` error until fixed. Same oversight pattern as M0.6's `apps/knowledge` miss: the fix doesn't travel with the *concept*, it has to be added per-package, and only running real code against a real DB catches the gap.
+
+## M0.8 – M0.10 — Walking Skeleton
+
+Not started. See the build plan for the full sequence: the human review gate, first automated script, and minimal evidence hashing.
