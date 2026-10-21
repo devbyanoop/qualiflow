@@ -2,6 +2,7 @@ from typing import Literal, TypedDict
 
 import litellm
 from langgraph.graph import END, StateGraph
+from langgraph.types import interrupt
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -35,6 +36,7 @@ class GenerateState(TypedDict):
     instruction: str
     retrieved_chunk: str
     case: dict  # ManualTestCase.model_dump()
+    review_decision: dict  # {"action": "approve"|"edit"|"reject", "edited_case": dict|None}
 
 
 async def retrieve_context(state: GenerateState) -> dict:
@@ -93,14 +95,28 @@ def draft_manual_cases(state: GenerateState) -> dict:
     return {"case": parsed.model_dump()}
 
 
-def build_graph():
+def human_review(state: GenerateState) -> dict:
+    """interrupt() pauses graph execution here and hands the drafted
+    case back to the caller. Resuming (a separate request, possibly a
+    separate process, possibly after a restart) requires invoking the
+    graph again with the SAME thread_id and Command(resume=decision) —
+    LangGraph's checkpointer (Postgres-backed, see scripts/
+    setup_checkpointer.py) restores the entire execution state, not
+    just a flag some code checks."""
+    decision = interrupt({"case": state["case"], "retrieved_chunk": state["retrieved_chunk"]})
+    return {"review_decision": decision}
+
+
+def build_graph(checkpointer=None):
+    # No checkpointer -> compiles fine but interrupt()/resume can't
+    # survive past a single ainvoke call (nothing persists state
+    # between calls). Always pass one outside of quick manual testing.
     graph = StateGraph(GenerateState)
     graph.add_node("retrieve_context", retrieve_context)
     graph.add_node("draft_manual_cases", draft_manual_cases)
+    graph.add_node("human_review", human_review)
     graph.set_entry_point("retrieve_context")
     graph.add_edge("retrieve_context", "draft_manual_cases")
-    graph.add_edge("draft_manual_cases", END)
-    return graph.compile()
-
-
-generate_tests_graph = build_graph()
+    graph.add_edge("draft_manual_cases", "human_review")
+    graph.add_edge("human_review", END)
+    return graph.compile(checkpointer=checkpointer)

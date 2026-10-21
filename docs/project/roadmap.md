@@ -123,6 +123,19 @@ M0.3's `__init__.py` fix (`asyncio.set_event_loop_policy(WindowsSelectorEventLoo
 
 **Bug caught by actually running the test suite, not just the manual curl checks:** `apps/agents/__init__.py` never got the Windows event-loop policy fix from M0.6 — this package didn't touch a database until `generate_tests.py` just now. All four tests failed identically with the same `ProactorEventLoop` error until fixed. Same oversight pattern as M0.6's `apps/knowledge` miss: the fix doesn't travel with the *concept*, it has to be added per-package, and only running real code against a real DB catches the gap.
 
-## M0.8 – M0.10 — Walking Skeleton
+## M0.8 — The human review gate ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: the human review gate, first automated script, and minimal evidence hashing.
+- [x] `human_review` node, using LangGraph's `interrupt()`, after `draft_manual_cases`. Graph compiled with a real Postgres-backed checkpointer (`AsyncPostgresSaver` — one-time table setup via `apps/agents/scripts/setup_checkpointer.py`, since those are CREATE TABLE statements LangGraph's own code runs, not something Alembic hand-writes).
+- [x] `POST /generate` starts a thread, pauses at the interrupt, returns `thread_id` + the pending case. `POST /review/{thread_id}` resumes with `approve`/`edit`/`reject`, persists a `case_reviews` row (new migration, same RLS pattern as every other table).
+- [x] **Done when, proven for the hard way, not assumed:** started a generation (paused at interrupt) → **killed the server process entirely** (confirmed dead — connection refused) → **started a brand-new process** → resumed the exact same `thread_id` → correct final result. This is the actual proof the build plan asks for: the checkpoint lives in Postgres, not in the first process's memory.
+- [x] Full test matrix (`apps/agents/tests/integration/test_human_review.py`), all real:
+  - **Positive:** generate pauses at the interrupt with the drafted case in the payload; approve resumes correctly.
+  - **Negative:** `aget_state` on a thread that was never started returns an empty snapshot (the signal `/review`'s 404 is built on).
+  - **Edge:** `reject` short-circuits with no final case; `edit` carries the edited case through, not the original.
+  - **Regression:** an automated proxy for the manual kill/restart proof — resumes a thread using a **fully independent** `AsyncPostgresSaver` connection and compiled graph instance from the one that started it, simulating a process boundary without the flakiness of real subprocess management. If checkpointing ever silently degraded to in-memory-only, this is what would catch it.
+
+**Known gap, stated plainly, not hidden:** LangGraph's checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`) have no `org_id` column — RLS (ADR-004) doesn't cover them the way it covers every table we own. Mitigated at the application level by namespacing `thread_id` as `{org_id}:{feature_id}:{uuid}`, which is not a database-enforced guarantee. Documented in `setup_checkpointer.py`'s docstring; revisit if/when this matters for real multi-tenant isolation.
+
+## M0.9 – M0.10 — Walking Skeleton
+
+Not started. See the build plan for the full sequence: first automated script and minimal evidence hashing.

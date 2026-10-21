@@ -1,10 +1,34 @@
-from fastapi import FastAPI, HTTPException
+import uuid
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.types import Command
 from pydantic import BaseModel
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
 
-from .generate_tests import ChunkNotFoundError, generate_tests_graph
+from .generate_tests import ChunkNotFoundError, build_graph
 from .hello_graph import hello_graph
+from .settings import settings
 
-app = FastAPI(title="QualiFlow Agents")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Opened ONCE for the process lifetime, not per-request — the
+    # checkpointer needs a long-lived connection pool so a later
+    # /review call (possibly after a restart) can still find state
+    # from an earlier /generate call. Plain libpq URI, no +psycopg —
+    # this isn't going through SQLAlchemy.
+    checkpointer_uri = settings.database_url.replace("postgresql+psycopg://", "postgresql://")
+    async with AsyncPostgresSaver.from_conn_string(checkpointer_uri) as checkpointer:
+        app.state.generate_tests_graph = build_graph(checkpointer)
+        yield
+
+
+app = FastAPI(title="QualiFlow Agents", lifespan=lifespan)
+
+db_engine = create_async_engine(settings.database_url)
 
 
 @app.get("/healthz")
@@ -25,25 +49,89 @@ class GenerateRequest(BaseModel):
 
 
 @app.post("/generate")
-async def generate(req: GenerateRequest) -> dict:
-    # ainvoke, not invoke — this runs on the event loop this process
-    # already has (the SelectorEventLoop built below), never a nested
-    # asyncio.run(). retrieve_context is async (real DB I/O); mixing it
-    # with invoke() would either block or try to spin up a second loop.
+async def generate(req: GenerateRequest, request: Request) -> dict:
+    # thread_id namespaced with org_id/feature_id — the checkpointer's
+    # own tables have no org_id column (see scripts/setup_checkpointer.py's
+    # docstring for why RLS doesn't cover them), so this is an
+    # application-level mitigation, not a database-enforced guarantee.
+    thread_id = f"{req.org_id}:{req.feature_id}:{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
+
     try:
-        result = await generate_tests_graph.ainvoke(
-            {"org_id": req.org_id, "feature_id": req.feature_id, "instruction": req.instruction}
+        result = await request.app.state.generate_tests_graph.ainvoke(
+            {"org_id": req.org_id, "feature_id": req.feature_id, "instruction": req.instruction},
+            config=config,
         )
     except ChunkNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
-    return {"case": result["case"], "retrieved_chunk": result["retrieved_chunk"]}
+
+    interrupts = result.get("__interrupt__")
+    if not interrupts:
+        # Shouldn't happen — human_review always calls interrupt() —
+        # but fail loudly rather than silently return an unreviewed case.
+        raise HTTPException(status_code=500, detail="Graph did not pause for review as expected.")
+
+    return {"thread_id": thread_id, "pending_review": interrupts[0].value}
+
+
+class ReviewRequest(BaseModel):
+    action: str  # "approve" | "edit" | "reject"
+    edited_case: dict | None = None
+
+
+@app.post("/review/{thread_id}")
+async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
+    if req.action not in {"approve", "edit", "reject"}:
+        raise HTTPException(status_code=422, detail=f"Unknown action {req.action!r}")
+    if req.action == "edit" and req.edited_case is None:
+        raise HTTPException(status_code=422, detail="edited_case is required when action is 'edit'")
+
+    config = {"configurable": {"thread_id": thread_id}}
+    graph = request.app.state.generate_tests_graph
+
+    state_snapshot = await graph.aget_state(config)
+    if not state_snapshot.values:
+        raise HTTPException(status_code=404, detail=f"No pending review for thread_id={thread_id!r}")
+
+    result = await graph.ainvoke(
+        Command(resume={"action": req.action, "edited_case": req.edited_case}), config=config
+    )
+
+    org_id = result["org_id"]
+    final_case = req.edited_case if req.action == "edit" else result["case"]
+
+    async with db_engine.begin() as conn:
+        await conn.execute(text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": org_id})
+        await conn.execute(
+            text(
+                "INSERT INTO case_reviews (id, org_id, feature_id, thread_id, decision, original_case, edited_case) "
+                "VALUES (:id, :org_id, :feature_id, :thread_id, :decision, :original_case ::jsonb, "
+                ":edited_case ::jsonb)"
+            ),
+            {
+                "id": str(uuid.uuid4()),
+                "org_id": org_id,
+                "feature_id": result["feature_id"],
+                "thread_id": thread_id,
+                "decision": req.action,
+                "original_case": _to_json(result["case"]),
+                "edited_case": _to_json(req.edited_case) if req.edited_case else None,
+            },
+        )
+
+    return {"thread_id": thread_id, "decision": req.action, "final_case": final_case if req.action != "reject" else None}
+
+
+def _to_json(value: dict) -> str:
+    import json
+
+    return json.dumps(value)
 
 
 if __name__ == "__main__":
     # Same reasoning as apps/knowledge/main.py and apps/api/main.py —
     # uvicorn.run() hard-codes ProactorEventLoop on Windows regardless
-    # of any policy set elsewhere. This app didn't need the fix until
-    # /generate added real DB I/O just now.
+    # of any policy set elsewhere.
     import asyncio
     import sys
 

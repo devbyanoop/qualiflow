@@ -94,8 +94,27 @@ jobs:
     # pushed to GitHub -- it doesn't exist yet as of M0.4 (still local-
     # only per the M0.0 decision), so this job will fail on GROQ auth
     # until that secret is added.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: qualiflow
+          POSTGRES_PASSWORD: ci_pw
+          POSTGRES_DB: qualiflow
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      QUALIFLOW_PG_HOST: localhost
+      QUALIFLOW_PG_PORT: 5433
+      QUALIFLOW_PG_USER: qualiflow
+      QUALIFLOW_PG_PASSWORD: ci_pw
+      QUALIFLOW_PG_APP_PASSWORD: ci_app_pw
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -103,8 +122,32 @@ jobs:
       - name: Install uv (Python tooling)
         uses: astral-sh/setup-uv@v3
 
+      - name: Install apps/api dependencies (for migrations)
+        run: uv sync --project apps/api --group dev
+
+      - name: Create restricted app role (mirrors infra/postgres/init-app-role.sh)
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=ci_pw psql -h localhost -p 5433 -U qualiflow -d qualiflow -c \
+            "CREATE ROLE qualiflow_app LOGIN PASSWORD 'ci_app_pw'; GRANT CONNECT ON DATABASE qualiflow TO qualiflow_app;"
+
+      - name: Run migrations (knowledge_chunks, case_reviews)
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+
       - name: Install apps/agents dependencies (incl. dev group)
         run: uv sync --project apps/agents --group dev
+
+      # One-time setup for LangGraph's own checkpoint tables (M0.8) —
+      # see scripts/setup_checkpointer.py's docstring for why this is
+      # separate from Alembic (CREATE TABLE statements LangGraph's own
+      # code runs, not something we hand-write migrations for).
+      - name: Set up LangGraph checkpointer tables
+        run: uv run --project apps/agents python apps/agents/scripts/setup_checkpointer.py
+      - name: Grant checkpointer tables to the restricted app role
+        run: |
+          PGPASSWORD=ci_pw psql -h localhost -p 5433 -U qualiflow -d qualiflow -c \
+            "GRANT SELECT, INSERT, UPDATE, DELETE ON checkpoint_migrations, checkpoints, checkpoint_blobs, checkpoint_writes TO qualiflow_app;"
 
       # Deliberately NOT mocked -- apps/agents is the AUTHORING layer
       # (plan §3 principle 1: "AI authors and maintains; deterministic
@@ -113,8 +156,8 @@ jobs:
       # hot path of regression execution), which never does and never
       # will. Mocking this test would only prove a mock matches our own
       # assumptions, not that the real integration works -- so this job
-      # makes one real, near-zero-cost call to Groq per run.
-      - name: pytest (apps/agents — real Groq call, no mocking)
+      # makes real, near-zero-cost calls to Groq per run.
+      - name: pytest (apps/agents — real Groq, real Postgres checkpointer, no mocking)
         run: uv run --project apps/agents pytest apps/agents/tests -v
 
   knowledge:
