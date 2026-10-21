@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from .api_automation_agent import dry_run, generate_pytest_script
 from .generate_tests import ChunkNotFoundError, build_graph
 from .hello_graph import hello_graph
 from .settings import settings
@@ -99,6 +101,7 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
 
     org_id = result["org_id"]
     final_case = req.edited_case if req.action == "edit" else result["case"]
+    case_review_id = str(uuid.uuid4())
 
     async with db_engine.begin() as conn:
         await conn.execute(text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": org_id})
@@ -109,7 +112,7 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
                 ":edited_case ::jsonb)"
             ),
             {
-                "id": str(uuid.uuid4()),
+                "id": case_review_id,
                 "org_id": org_id,
                 "feature_id": result["feature_id"],
                 "thread_id": thread_id,
@@ -119,7 +122,46 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
             },
         )
 
-    return {"thread_id": thread_id, "decision": req.action, "final_case": final_case if req.action != "reject" else None}
+    response = {
+        "thread_id": thread_id,
+        "decision": req.action,
+        "final_case": final_case if req.action != "reject" else None,
+    }
+
+    if req.action in {"approve", "edit"}:
+        # api_automation_agent, M0.9. Both generate_pytest_script
+        # (litellm.completion) and dry_run (subprocess.run) are
+        # blocking calls -- to_thread so they don't stall this async
+        # handler's event loop for the ~10-20s this takes.
+        script = await asyncio.to_thread(generate_pytest_script, final_case, result["retrieved_chunk"])
+        run_result = await asyncio.to_thread(dry_run, script)
+
+        async with db_engine.begin() as conn:
+            await conn.execute(
+                text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": org_id}
+            )
+            await conn.execute(
+                text(
+                    "INSERT INTO automated_scripts (id, org_id, feature_id, case_review_id, code, passed, output) "
+                    "VALUES (:id, :org_id, :feature_id, :case_review_id, :code, :passed, :output)"
+                ),
+                {
+                    "id": str(uuid.uuid4()),
+                    "org_id": org_id,
+                    "feature_id": result["feature_id"],
+                    "case_review_id": case_review_id,
+                    "code": run_result["code"],
+                    "passed": run_result["passed"],
+                    "output": run_result["output"],
+                },
+            )
+
+        response["automation"] = {
+            "passed": run_result["passed"],
+            "script_path": run_result["script_path"],
+        }
+
+    return response
 
 
 def _to_json(value: dict) -> str:

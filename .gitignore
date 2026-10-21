@@ -38,3 +38,6 @@ Thumbs.db
 
 # MkDocs build output (published separately, not committed to main)
 site/
+
+# Generated test scripts (M0.9) — the artifact of a run, not source
+apps/agents/generated/

@@ -136,6 +136,20 @@ M0.3's `__init__.py` fix (`asyncio.set_event_loop_policy(WindowsSelectorEventLoo
 
 **Known gap, stated plainly, not hidden:** LangGraph's checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`) have no `org_id` column — RLS (ADR-004) doesn't cover them the way it covers every table we own. Mitigated at the application level by namespacing `thread_id` as `{org_id}:{feature_id}:{uuid}`, which is not a database-enforced guarantee. Documented in `setup_checkpointer.py`'s docstring; revisit if/when this matters for real multi-tenant isolation.
 
-## M0.9 – M0.10 — Walking Skeleton
+## M0.9 — First automated script ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: first automated script and minimal evidence hashing.
+- [x] `api_automation_agent.py`: on approve/edit, generates one pytest file (real Groq call, `qf-strong` tier) asserting the business rule against NovaPay's real API, dry-runs it via subprocess (not sandboxed — explicitly not required yet per the build plan). Wired into `/review`'s approve/edit path; results persisted to a new `automated_scripts` table (same RLS pattern as everything else).
+- [x] **Done when, proven twice over:**
+  1. The generated pytest file genuinely runs and **passes** against NovaPay's real, running API.
+  2. **Deliberately broke the assertion** (changed the expected balance delta to a nonsense value) and watched it **fail for the right reason** — a real `AssertionError` comparing real numbers, not a crash or a false pass.
+- [x] **Bonus, cashing in M0.5's deferred promise:** a test for the known ownership-check gap (`fromAccountId` never verified against the caller) genuinely fails against the real API — concrete proof that generation finds real gaps, not just happy paths. Kept permanently as `test_novapay_known_gaps.py`, marked `xfail(strict=True)` so it stays informative without making CI permanently red, and **fails loudly** the moment NovaPay's behavior ever changes.
+- [x] Full test matrix (`test_api_automation_agent.py`): positive (real account resolution; full generate→run→pass), negative (bad credentials raise), edge (a syntax-error script is reported as failed, not an unhandled crash in our own process), regression (asserts the prompt sent to the LLM always contains the real credentials/account IDs/OpenAPI spec — see below for why).
+
+**Two real bugs, found by actually running the generated code against the real API, not by review:**
+
+1. **First attempt failed at the very first real HTTP call** — the LLM invented a plausible-looking account ID (`"12345678"`) that doesn't exist, 404ing immediately. Fixed by adding `resolve_two_own_accounts()`: the agent itself probes the live API (login, scan account IDs, find two owned by the same user) and hands the LLM *real, verified* IDs — exactly the plan's §7.1 design ("the agent maps steps to the live app... to resolve real locators and endpoints"), not something to leave to the LLM to guess.
+2. **Second attempt got the account IDs and field names right** (after also passing the real `fixtures/novapay/openapi.yaml` into the prompt, fixing a parallel guessed-field-name problem: `sourceAccountId`/`reference` instead of the real `fromAccountId`/`refNo`) **but invented login credentials** (`testuser`/`testpass`) — never told what to use. Fixed the same way: real credentials stated explicitly in the prompt, not left to chance.
+
+**CI gap, resolved honestly, not hidden:** these tests need a live NovaPay, which is a separate, unvendored repo (M0.5) that CI has no access to. `tests/integration/conftest.py` adds a `requires_novapay` marker, auto-skipped (not failed) whenever `localhost:4000` isn't reachable — true both locally (if you forget to start it) and in CI (where it's never available). The CI job still runs; these specific tests just skip with a clear reason instead of erroring.
+
+**Where this leaves the Walking Skeleton:** M0.1 through M0.9 are done — ingestion, generation, human review (with real Postgres-backed pause/resume), and automation all work end-to-end against a real external app. **M0.10 (minimal evidence hashing) is the one remaining piece**, not done in this pass — scoped as its own milestone, not folded in here.
