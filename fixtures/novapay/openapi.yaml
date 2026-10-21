@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: NovaPay (reference fixture)
+  version: "1.0.0"
+  description: >
+    Not NovaPay's own spec — NovaPay (Express/EJS, D:\AutomationTool\novapay)
+    doesn't generate one. This is QualiFlow's own description of NovaPay's
+    REST surface, written by exercising the real running app (not read off
+    its source alone), for use as the M0.5 ingestion/generation fixture.
+    Covers only the JSON API routes; NovaPay also serves server-rendered
+    HTML pages (login, dashboard, transfer forms) that this spec excludes.
+servers:
+  - url: http://localhost:4000
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /api/auth/login:
+    post:
+      summary: Authenticate and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      username: { type: string }
+                      fullName: { type: string }
+                      role: { type: string }
+        "401":
+          description: Invalid credentials
+
+  /api/accounts/{id}:
+    get:
+      summary: Get account details
+      security: [{ bearerAuth: [] }]
+      description: >
+        KNOWN GAP (verified against the running app, not assumed): this
+        endpoint does not check that the account belongs to the
+        authenticated caller — any logged-in user can fetch any account
+        by id. Documented as found, not fixed; NovaPay is not QualiFlow's
+        to patch. Good candidate for a generated negative test later.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Account found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  account_no: { type: string }
+                  type: { type: string }
+                  balance: { type: number }
+                  currency: { type: string }
+                  owner_name: { type: string }
+        "404":
+          description: Account not found
+
+  /api/accounts/{id}/transactions:
+    get:
+      summary: Get an account's transaction history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Transaction list (empty array if none)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    account_id: { type: integer }
+                    type: { type: string, enum: [debit, credit] }
+                    amount: { type: number }
+                    description: { type: string }
+                    ref_no: { type: string }
+                    created_at: { type: string }
+
+  /api/customers:
+    get:
+      summary: List customers (PII, deliberately unmasked)
+      security: [{ bearerAuth: [] }]
+      description: >
+        Source comment: "PII exposed for masking demo" — returns raw SSN,
+        DOB, address per customer. Intentional fixture for QualiFlow's
+        masking-rule validation work (plan §12.5), not an oversight.
+      responses:
+        "200":
+          description: Customer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    first_name: { type: string }
+                    last_name: { type: string }
+                    email: { type: string }
+                    phone: { type: string }
+                    ssn: { type: string }
+                    dob: { type: string }
+                    address: { type: string }
+                    city: { type: string }
+                    state: { type: string }
+                    zip: { type: string }
+                    status: { type: string }
+
+  /api/transfers:
+    post:
+      summary: Transfer funds between accounts
+      security: [{ bearerAuth: [] }]
+      description: >
+        See fixtures/novapay/brd-transfer-rule.md for the intended business
+        rule. KNOWN GAPS in this endpoint relative to that rule, verified
+        against the running app: (1) does not reject fromAccountId ==
+        toAccountId, (2) does not verify fromAccountId belongs to the
+        caller (contrast with the HTML form handler at POST /transfer,
+        which checks both) and (3) does not write transaction history
+        rows for either leg (the form handler writes both debit and
+        credit rows; this endpoint only inserts into `transfers`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fromAccountId, toAccountId, amount]
+              properties:
+                fromAccountId: { type: integer }
+                toAccountId: { type: integer }
+                amount: { type: number, minimum: 0, exclusiveMinimum: true }
+                memo: { type: string }
+      responses:
+        "200":
+          description: Transfer completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refNo: { type: string, example: "TRF-20261021-A539D6" }
+                  amount: { type: number }
+                  status: { type: string, example: completed }
+                  fromAccountId: { type: integer }
+                  toAccountId: { type: integer }
+        "400":
+          description: Invalid parameters or insufficient funds
+        "404":
+          description: Source account not found
+
+  /api/transfers/{ref}:
+    get:
+      summary: Look up a transfer by reference number
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Transfer found
+        "404":
+          description: Transfer not found

@@ -75,6 +75,16 @@ Full detail lives in the local `Plan/qualiflow-build-plan.md` (not published —
 - Guessed Groq model names from memory (`llama-3.1-8b-instant`, `llama-3.3-70b-versatile`) — **wrong**, not available on this account. Queried `GET /v1/models` with the real key instead of guessing again; landed on `openai/gpt-oss-20b`/`120b`, which Groq actually serves.
 - LiteLLM's `completion_cost()` doesn't have `groq/openai/gpt-oss-20b` mapped (its nested `openai/` confuses LiteLLM's own provider-prefix detection, reporting `custom_llm_provider=openai` instead of `groq`) — added a small, explicitly-cited manual fallback price table (`$0.075`/`$0.30` per 1M input/output tokens, cross-checked against three independent sources) rather than silently report no cost or guess a number.
 
-## M0.5 – M0.10 — Walking Skeleton
+## M0.5 — The fixture everything else tests against ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: the demo bank fixture, ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.
+**Architecture decision made this milestone, not just executed:** the original plan had QualiFlow build and own a `demo-apps/` folder inside its own repo. Rejected — QualiFlow is standalone infrastructure that tests *someone's* app, the same way it would for a real client; bundling a target app inside the tool that tests it blurs that distinction. **NovaPay** (`D:\AutomationTool\novapay`, already built for Qestra/niti) is the reference fixture instead — a separate repo, pointed at over the network, never vendored in. `qualiflow-plan.md` and `qualiflow-build-plan.md` are both updated throughout to reflect this.
+
+- [x] Confirmed NovaPay runs (`node server.js`, port 4000) and exercised its real endpoints with `curl` — login, accounts, customers, transfers — rather than assuming behavior from source alone.
+- [x] `fixtures/novapay/openapi.yaml` — written from the verified running app, **validated clean** with `openapi-spec-validator` (caught a real spec bug: `exclusiveMinimum: 0` is OpenAPI 3.1/JSON-Schema-2020-12 syntax, not valid under 3.0.3's dialect, which needs `minimum` + a boolean `exclusiveMinimum`).
+- [x] `fixtures/novapay/brd-transfer-rule.md` — the *intended* fund-transfer rule, written as a BRD would state it, not a description of current bugs.
+
+**Real findings, verified against the running app, not guessed from reading code:** NovaPay's `POST /api/transfers` (the JSON API path) diverges from its own `POST /transfer` (HTML form path) in three ways — it doesn't reject `fromAccountId == toAccountId`, doesn't verify the source account belongs to the caller (any logged-in user can empty any account by id), and doesn't write transaction-history rows for either leg. `GET /api/accounts/:id` has the same ownership gap. These are documented in `openapi.yaml`, not fixed — NovaPay isn't QualiFlow's to patch. **Deliberately left in place as a future milestone's payoff:** once case generation (M0.7) and automation (M0.9) exist, a negative test for "can't transfer from an account you don't own" should be generated, run, and genuinely fail against the real API — a concrete demonstration that generation finds real gaps, not just confirms happy paths.
+
+## M0.6 – M0.10 — Walking Skeleton
+
+Not started. See the build plan for the full sequence: ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.
