@@ -1,16 +1,18 @@
 import uuid
 
 import pytest
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from qualiflow_agents.generate_tests import ChunkNotFoundError, generate_tests_graph
+from qualiflow_agents.generate_tests import ChunkNotFoundError, build_graph
 from qualiflow_agents.settings import settings
 
 REQUIREMENT_TEXT = (
     "A customer may withdraw cash from an ATM up to their daily limit of $500. "
     "Withdrawals are rejected if they would exceed the remaining daily limit."
 )
+CHECKPOINTER_URI = settings.database_url.replace("postgresql+psycopg://", "postgresql://")
 
 
 async def _seed_chunk(org_id: str, feature_id: str, content: str) -> None:
@@ -57,24 +59,32 @@ async def test_positive_generates_case_grounded_in_the_real_requirement():
     something' — checks the generated case actually reflects the
     specific requirement text, not a hallucinated generic case. This
     is the same check M0.7's build-plan milestone calls for: prove the
-    retrieved chunk was actually used."""
+    retrieved chunk was actually used. Since M0.8, the graph pauses at
+    human_review -- the drafted case is read from the interrupt value,
+    not a final state key."""
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     await _seed_chunk(org_id, "atm", REQUIREMENT_TEXT)
+    thread_id = f"{org_id}:atm:{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        result = await generate_tests_graph.ainvoke(
-            {"org_id": org_id, "feature_id": "atm", "instruction": "Generate a test case for this rule."}
-        )
-        case = result["case"]
+        async with AsyncPostgresSaver.from_conn_string(CHECKPOINTER_URI) as checkpointer:
+            graph = build_graph(checkpointer)
+            paused = await graph.ainvoke(
+                {"org_id": org_id, "feature_id": "atm", "instruction": "Generate a test case for this rule."},
+                config=config,
+            )
+            pending = paused["__interrupt__"][0].value
+            case = pending["case"]
 
-        assert result["retrieved_chunk"] == REQUIREMENT_TEXT
-        assert case["title"]
-        assert case["steps"]
-        assert case["priority"] in {"low", "medium", "high", "critical"}
-        # Grounded in the specific requirement, not generic — "500" or
-        # "daily limit" should appear somewhere in the generated case.
-        case_text = " ".join([case["title"], case["preconditions"], case["expected_result"]] + case["steps"])
-        assert "500" in case_text or "daily limit" in case_text.lower()
+            assert pending["retrieved_chunk"] == REQUIREMENT_TEXT
+            assert case["title"]
+            assert case["steps"]
+            assert case["priority"] in {"low", "medium", "high", "critical"}
+            # Grounded in the specific requirement, not generic — "500" or
+            # "daily limit" should appear somewhere in the generated case.
+            case_text = " ".join([case["title"], case["preconditions"], case["expected_result"]] + case["steps"])
+            assert "500" in case_text or "daily limit" in case_text.lower()
     finally:
         await _cleanup(org_id)
 
@@ -85,11 +95,15 @@ async def test_positive_generates_case_grounded_in_the_real_requirement():
 @pytest.mark.asyncio
 async def test_negative_missing_chunk_raises_chunk_not_found():
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"  # never seeded
+    thread_id = f"{org_id}:does-not-exist:{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
-    with pytest.raises(ChunkNotFoundError):
-        await generate_tests_graph.ainvoke(
-            {"org_id": org_id, "feature_id": "does-not-exist", "instruction": "test"}
-        )
+    async with AsyncPostgresSaver.from_conn_string(CHECKPOINTER_URI) as checkpointer:
+        graph = build_graph(checkpointer)
+        with pytest.raises(ChunkNotFoundError):
+            await graph.ainvoke(
+                {"org_id": org_id, "feature_id": "does-not-exist", "instruction": "test"}, config=config
+            )
 
 
 # --- Edge ----------------------------------------------------------------
@@ -102,12 +116,18 @@ async def test_edge_empty_instruction_still_generates_a_valid_case():
     to just the requirement) rather than crashing or returning junk."""
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     await _seed_chunk(org_id, "atm", REQUIREMENT_TEXT)
+    thread_id = f"{org_id}:atm:{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        result = await generate_tests_graph.ainvoke({"org_id": org_id, "feature_id": "atm", "instruction": ""})
-        case = result["case"]
-        assert case["title"]
-        assert case["steps"]
+        async with AsyncPostgresSaver.from_conn_string(CHECKPOINTER_URI) as checkpointer:
+            graph = build_graph(checkpointer)
+            paused = await graph.ainvoke(
+                {"org_id": org_id, "feature_id": "atm", "instruction": ""}, config=config
+            )
+            case = paused["__interrupt__"][0].value["case"]
+            assert case["title"]
+            assert case["steps"]
     finally:
         await _cleanup(org_id)
 
@@ -123,12 +143,16 @@ async def test_edge_rls_isolation_holds_for_this_new_read_path():
     org_a = f"test-org-a-{uuid.uuid4().hex[:8]}"
     org_b = f"test-org-b-{uuid.uuid4().hex[:8]}"
     await _seed_chunk(org_a, "shared-feature-name", REQUIREMENT_TEXT)
+    thread_id = f"{org_b}:shared-feature-name:{uuid.uuid4()}"
+    config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        with pytest.raises(ChunkNotFoundError):
-            await generate_tests_graph.ainvoke(
-                {"org_id": org_b, "feature_id": "shared-feature-name", "instruction": "test"}
-            )
+        async with AsyncPostgresSaver.from_conn_string(CHECKPOINTER_URI) as checkpointer:
+            graph = build_graph(checkpointer)
+            with pytest.raises(ChunkNotFoundError):
+                await graph.ainvoke(
+                    {"org_id": org_b, "feature_id": "shared-feature-name", "instruction": "test"}, config=config
+                )
     finally:
         await _cleanup(org_a)
         await _cleanup(org_b)

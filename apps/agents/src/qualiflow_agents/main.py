@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from .api_automation_agent import dry_run, generate_pytest_script
+from .evidence import store_evidence
 from .generate_tests import ChunkNotFoundError, build_graph
 from .hello_graph import hello_graph
 from .settings import settings
@@ -135,6 +136,20 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
         # handler's event loop for the ~10-20s this takes.
         script = await asyncio.to_thread(generate_pytest_script, final_case, result["retrieved_chunk"])
         run_result = await asyncio.to_thread(dry_run, script)
+        automated_script_id = str(uuid.uuid4())
+
+        # M0.10: hash the real artifacts, store them + a manifest in
+        # MinIO — this app's first actual use of the object storage
+        # set up all the way back in M0.1.
+        manifest = await asyncio.to_thread(
+            store_evidence,
+            org_id,
+            result["feature_id"],
+            automated_script_id,
+            run_result["code"],
+            run_result["output"],
+            run_result["passed"],
+        )
 
         async with db_engine.begin() as conn:
             await conn.execute(
@@ -142,23 +157,27 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
             )
             await conn.execute(
                 text(
-                    "INSERT INTO automated_scripts (id, org_id, feature_id, case_review_id, code, passed, output) "
-                    "VALUES (:id, :org_id, :feature_id, :case_review_id, :code, :passed, :output)"
+                    "INSERT INTO automated_scripts "
+                    "(id, org_id, feature_id, case_review_id, code, passed, output, evidence) "
+                    "VALUES (:id, :org_id, :feature_id, :case_review_id, :code, :passed, :output, "
+                    ":evidence ::jsonb)"
                 ),
                 {
-                    "id": str(uuid.uuid4()),
+                    "id": automated_script_id,
                     "org_id": org_id,
                     "feature_id": result["feature_id"],
                     "case_review_id": case_review_id,
                     "code": run_result["code"],
                     "passed": run_result["passed"],
                     "output": run_result["output"],
+                    "evidence": _to_json(manifest),
                 },
             )
 
         response["automation"] = {
             "passed": run_result["passed"],
             "script_path": run_result["script_path"],
+            "evidence_manifest": manifest,
         }
 
     return response

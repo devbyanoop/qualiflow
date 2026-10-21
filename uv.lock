@@ -2725,6 +2725,7 @@ name = "qualiflow-agents"
 version = "0.0.1"
 source = { editable = "apps/agents" }
 dependencies = [
+    { name = "boto3" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "langgraph" },
@@ -2745,6 +2746,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", specifier = ">=1.35" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "langgraph", specifier = ">=0.2" },

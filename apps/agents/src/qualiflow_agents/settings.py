@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     pg_password: str = "changeme"
     pg_app_password: str = "changeme"
 
+    minio_api_port: int = 9000
+    minio_root_user: str = "qualiflow"
+    minio_root_password: str = "changeme"
+
+    @property
+    def minio_endpoint_url(self) -> str:
+        return f"http://{self.pg_host}:{self.minio_api_port}"
+
     @property
     def database_url(self) -> str:
         # Same restricted qualiflow_app role as apps/api and
