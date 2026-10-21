@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv (Python tooling)
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install pnpm (JS tooling)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Placeholder — replaced with real `uv run pytest` / `pnpm test` once
+      # apps/packages exist (M0.1 onward). This step exists so the pipe
+      # itself (trigger -> checkout -> tool install -> green) is proven
+      # before anything depends on it.
+      - name: CI skeleton check
+        run: echo "CI pipe is live. Lint/test stages wire in starting M0.1."

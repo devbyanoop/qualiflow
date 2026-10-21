@@ -1,0 +1,3005 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualiFlow Plan</title>
+<style>
+:root{--bg:#fbfaf7;--panel:#fff;--ink:#1d2330;--muted:#5d6675;--line:#e3e0d8;--accent:#0f766e;--accent-soft:#e6f3f1;--code:#f3f1ec}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--panel:#1a1e26;--ink:#e6e8ec;--muted:#9aa3b2;--line:#2c323d;--accent:#5eead4;--accent-soft:#16302d;--code:#222833}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:32px 20px;border-right:1px solid var(--line);font-size:14px}
+nav .brand{font-weight:700;color:var(--accent);margin-bottom:16px;letter-spacing:.02em}
+nav ul{list-style:none;padding:0;margin:0}
+nav li{margin:2px 0}
+nav a{color:var(--muted);text-decoration:none;display:block;padding:4px 8px;border-radius:6px}
+nav a:hover{background:var(--accent-soft);color:var(--ink)}
+main{padding:40px 48px 80px;min-width:0}
+h1{font-size:2.1rem;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.45rem;margin:48px 0 12px;padding-top:12px;border-top:2px solid var(--accent)}
+h3{font-size:1.1rem;margin:28px 0 8px}
+a{color:var(--accent)}
+hr{display:none}
+blockquote{margin:16px 0;padding:10px 16px;background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:6px;color:var(--ink)}
+blockquote p{margin:0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--panel);display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft)}
+code{font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px}
+pre{background:var(--code);padding:16px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0}
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto;margin:16px 0}
+.diagram pre.mermaid{background:none;border:0;padding:0;text-align:center}
+li{margin:4px 0}
+@media (max-width:860px){.layout{display:block}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px}main{padding:24px 16px 60px}}
+@media print{nav{display:none}.layout{display:block}main{padding:0}h2{break-after:avoid}table,pre,.diagram{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav><div class="brand">QualiFlow · Plan</div><div class="toc">
+<ul>
+<li><a href="#qualiflow-ai-native-test-automation-platform">QualiFlow — AI-Native Test Automation Platform</a></li>
+<li><a href="#part-a-strategy">Part A — Strategy</a><ul>
+<li><a href="#1-executive-summary">1. Executive Summary</a></li>
+<li><a href="#2-problem-users-positioning">2. Problem, Users &amp; Positioning</a></li>
+<li><a href="#3-product-principles">3. Product Principles</a></li>
+</ul>
+</li>
+<li><a href="#part-b-product">Part B — Product</a><ul>
+<li><a href="#4-workspace-configuration">4. Workspace &amp; Configuration</a></li>
+<li><a href="#5-knowledge-base-rag-with-delta-ingestion">5. Knowledge Base (RAG) with Delta Ingestion</a></li>
+<li><a href="#6-test-design">6. Test Design</a></li>
+<li><a href="#7-automation-validation">7. Automation &amp; Validation</a></li>
+<li><a href="#8-test-execution">8. Test Execution</a></li>
+<li><a href="#9-test-maintenance">9. Test Maintenance</a></li>
+<li><a href="#10-release-intelligence">10. Release Intelligence</a></li>
+<li><a href="#11-role-based-reporting-insights">11. Role-Based Reporting &amp; Insights</a></li>
+<li><a href="#12-compliance-audit-ready-evidence">12. Compliance &amp; Audit-Ready Evidence</a></li>
+<li><a href="#13-integrations-exportimport-api">13. Integrations, Export/Import &amp; API</a></li>
+<li><a href="#14-user-experience-onboarding-accessibility-product-analytics">14. User Experience: Onboarding, Accessibility, Product Analytics</a></li>
+</ul>
+</li>
+<li><a href="#part-c-platform">Part C — Platform</a><ul>
+<li><a href="#15-system-architecture">15. System Architecture</a></li>
+<li><a href="#16-agent-design-langgraph">16. Agent Design (LangGraph)</a></li>
+<li><a href="#17-data-model-core-entities">17. Data Model (core entities)</a></li>
+<li><a href="#18-security-privacy">18. Security &amp; Privacy</a></li>
+<li><a href="#19-reliability-operations">19. Reliability &amp; Operations</a></li>
+<li><a href="#20-quality-evals-metrics">20. Quality: Evals &amp; Metrics</a></li>
+<li><a href="#21-repository-structure">21. Repository Structure</a></li>
+</ul>
+</li>
+<li><a href="#part-d-business">Part D — Business</a><ul>
+<li><a href="#22-business-model">22. Business Model</a></li>
+<li><a href="#23-legal-commercial">23. Legal &amp; Commercial</a></li>
+<li><a href="#24-go-to-market-customer-success">24. Go-to-Market &amp; Customer Success</a></li>
+</ul>
+</li>
+<li><a href="#part-e-delivery">Part E — Delivery</a><ul>
+<li><a href="#25-scope-prioritization">25. Scope Prioritization</a></li>
+<li><a href="#26-phased-development-plan-24-months">26. Phased Development Plan (24 months)</a></li>
+<li><a href="#27-team-budget-funding">27. Team, Budget &amp; Funding</a></li>
+<li><a href="#28-risks-mitigations">28. Risks &amp; Mitigations</a></li>
+<li><a href="#29-portfolio-checklist-next-30-days">29. Portfolio Checklist &amp; Next 30 Days</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav>
+<main><h1 id="qualiflow-ai-native-test-automation-platform">QualiFlow — AI-Native Test Automation Platform</h1>
+<p><strong>Product &amp; Engineering Plan · v2.0 · October 2026</strong></p>
+<blockquote>
+<p><em>"QualiFlow" is a working name. Check trademark and domain availability before using it publicly.</em></p>
+</blockquote>
+<p><strong>How to read this plan</strong></p>
+<ul>
+<li><strong>Part A — Strategy</strong> (§1–3): what we're building, for whom, and the principles behind every decision.</li>
+<li><strong>Part B — Product</strong> (§4–14): capabilities in the order a test actually lives: set up → understand requirements → design cases → automate → execute → maintain → decide release → report → prove compliance.</li>
+<li><strong>Part C — Platform</strong> (§15–21): architecture, agents, data, security, operations, quality.</li>
+<li><strong>Part D — Business</strong> (§22–24): model, legal, go-to-market.</li>
+<li><strong>Part E — Delivery</strong> (§25–29): what ships when, over a 24-month plan, plus risks and next steps.</li>
+</ul>
+<p>Boxes marked <strong>💡 Recommendation</strong> are my suggestions for you to review and accept, change, or reject.</p>
+<hr />
+<h1 id="part-a-strategy">Part A — Strategy</h1>
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>QualiFlow is an enterprise-grade, multi-tenant SaaS platform that uses agentic AI (LangGraph) to <strong>design, generate, run, heal, and triage</strong> functional tests across <strong>web UI (Playwright)</strong>, <strong>mobile (Appium)</strong>, and <strong>APIs (Playwright request / RestAssured / pytest)</strong> — and to support <strong>manual testing</strong> in the tools teams already use.</p>
+<p>Around that core it adds:</p>
+<ul>
+<li>a <strong>knowledge base</strong> of the client's requirements, kept current with delta ingestion;</li>
+<li><strong>adaptive generation</strong> that learns each QA team's style from their review decisions;</li>
+<li><strong>release intelligence</strong> that recommends which tests to run for each release;</li>
+<li><strong>role-based reporting</strong> from QA engineer to C-level and the client, by dashboard and email;</li>
+<li><strong>audit-ready evidence</strong> for regulated domains (BFSI, pharmacovigilance, healthcare, insurance), adapted to each client's <strong>jurisdiction</strong> (e.g. Saudi Arabia, USA, EU, India);</li>
+<li><strong>multilingual</strong> support across the UI, generated content, reports, and testing of localized apps.</li>
+</ul>
+<p>The project serves two goals at once:</p>
+<ol>
+<li><strong>Portfolio</strong> — a public, well-engineered repo that proves production-grade agentic AI skills (LangGraph, MCP, RAG, evals, observability, multi-tenancy, security).</li>
+<li><strong>Product</strong> — a live, paying SaaS, released early as a focused MVP and grown over ~24 months into the full platform described here.</li>
+</ol>
+<hr />
+<h2 id="2-problem-users-positioning">2. Problem, Users &amp; Positioning</h2>
+<h3 id="21-the-problem">2.1 The problem</h3>
+<table>
+<thead>
+<tr>
+<th>Pain</th>
+<th>Cost to teams</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Writing test cases and automation is slow</td>
+<td>Coverage lags behind features; manual regression persists</td>
+</tr>
+<tr>
+<td>Locators break on every UI change</td>
+<td>A large share of automation effort goes to maintenance (often cited at 30–50% — validate in customer interviews)</td>
+</tr>
+<tr>
+<td>Failure investigation is manual</td>
+<td>Engineers spend hours deciding "bug, flake, or environment?"</td>
+</tr>
+<tr>
+<td>Full regression every release is slow; partial regression is guesswork</td>
+<td>Late releases or escaped defects</td>
+</tr>
+<tr>
+<td>Web, mobile, API, and manual testing live in separate tools</td>
+<td>Fragmented reporting, duplicated effort</td>
+</tr>
+<tr>
+<td>Audit evidence is assembled by hand</td>
+<td>Weeks of effort per release in regulated domains</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-target-users">2.2 Target users</h3>
+<ul>
+<li><strong>Primary:</strong> QA/SDET teams of 3–30 people in mid-size product companies and IT services firms.</li>
+<li><strong>Secondary:</strong> Developers in teams without dedicated QA who need regression safety.</li>
+<li><strong>Enterprise:</strong> Regulated organizations (BFSI, life sciences, healthcare, insurance) needing evidence, SSO, data residency, and self-hosted options.</li>
+<li><strong>Channel:</strong> IT services firms delivering testing to clients in India, the Gulf, and the US — they buy for many client projects and value white-labelled reporting.</li>
+</ul>
+<h3 id="23-competitive-landscape">2.3 Competitive landscape</h3>
+<p>Existing players include mabl, testRigor, Testim (Tricentis), Functionize, Katalon, QA Wolf, Momentic, and Applitools (visual); test-management tools such as Xray, Zephyr, TestRail, and qTest are adding AI features too. <em>Verify current offerings and pricing before positioning.</em></p>
+<p><strong>Differentiation:</strong></p>
+<ol>
+<li><strong>Code-first output</strong> — real Playwright/Appium/RestAssured code the customer owns. No lock-in to a proprietary recorder or DSL.</li>
+<li><strong>One platform for manual + web + mobile + API</strong>, synced with the client's existing test-management tool instead of replacing it.</li>
+<li><strong>Human-in-the-loop by design</strong> — QA lead approves cases; SDETs review code as PRs.</li>
+<li><strong>Domain + jurisdiction depth</strong> — banking, pharmacovigilance, and regional rules built in.</li>
+<li><strong>Enterprise deployment flexibility</strong> — SaaS, dedicated, in the client's cloud, or on-premise; bring-your-own LLM.</li>
+</ol>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Lead sales conversations with <strong>"we automate your existing manual suite and keep your Jira/Xray in sync"</strong>. It's the most concrete, measurable promise and avoids the "rip and replace" objection.</p>
+</blockquote>
+<hr />
+<h2 id="3-product-principles">3. Product Principles</h2>
+<p>These principles resolve most design debates. Each is recorded as an architecture decision record (ADR, §15.6).</p>
+<ol>
+<li><strong>AI authors and maintains; deterministic engines execute.</strong> Generated tests are real code that runs in CI without an LLM.</li>
+<li><strong>Humans approve what matters.</strong> Test cases, business-rule formulas, regression selections, heals, and releases each have a human gate.</li>
+<li><strong>The client owns their artifacts.</strong> Code lives in their repo; cases sync to their tools; everything is exportable.</li>
+<li><strong>No client data to the LLM unless needed and allowed.</strong> Validations run as code; the LLM sees schemas and metadata, not records.</li>
+<li><strong>Numbers are computed, not generated.</strong> Metrics and scores are deterministic; AI only explains them, with links to source data.</li>
+<li><strong>Evidence by default.</strong> Every run produces a tamper-evident evidence package.</li>
+<li><strong>Tiers, not models.</strong> Agent tasks request a capability tier; each tenant maps tiers to their own provider.</li>
+<li><strong>Pluggable by design.</strong> Technologies, test-management tools, domain packs, and jurisdiction packs are plugins or versioned data — not hard-coded.</li>
+<li><strong>Safe by default.</strong> Agents never act on production; destructive actions are blocked unless explicitly allowed.</li>
+<li><strong>Global from the start.</strong> Every user-facing string, date, number, and report is localizable.</li>
+</ol>
+<hr />
+<h1 id="part-b-product">Part B — Product</h1>
+<p>The capability map below follows the life of a test. Each section describes one stage.</p>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    S[4 · Set up&lt;br/&gt;org, project, tech,&lt;br/&gt;domain, jurisdiction, language] --&gt; K[5 · Understand&lt;br/&gt;knowledge base]
+    K --&gt; D[6 · Design&lt;br/&gt;cases + review + learning]
+    D --&gt; A[7 · Automate&lt;br/&gt;scripts + validation kit]
+    D --&gt; M[8 · Execute manual&lt;br/&gt;synced with Jira/TMS]
+    A --&gt; E[8 · Execute automated&lt;br/&gt;runs, CI, environments]
+    E --&gt; X[9 · Maintain&lt;br/&gt;heal, triage, flaky]
+    X --&gt; R[10 · Decide&lt;br/&gt;release intelligence]
+    M --&gt; R
+    R --&gt; P[11 · Report&lt;br/&gt;role-based, email]
+    P --&gt; C[12 · Prove&lt;br/&gt;audit evidence]
+</pre></div>
+<h2 id="4-workspace-configuration">4. Workspace &amp; Configuration</h2>
+<h3 id="41-organizations-projects-and-roles">4.1 Organizations, projects, and roles</h3>
+<pre><code>Organization (client or services firm)
+└── Project (one product or application)
+    ├── Environments (dev, QA, UAT, pre-prod; production only for read-only monitoring, §8.5)
+    ├── Tech profile (§4.3) · Domain pack (§4.2) · Jurisdiction pack (§4.4) · Languages (§4.5)
+    └── Features (hierarchy, §4.2)
+</code></pre>
+<p><strong>Roles (default, customizable):</strong> Org owner, Org admin, Project admin, QA lead, QA engineer / SDET, Developer, Manager, Executive, Client partner, Client viewer, Auditor (read-only). Permissions are role-based (RBAC) and scoped per project; services firms can give each of their clients a scoped, read-only view.</p>
+<h3 id="42-feature-hierarchy-and-domain-packs">4.2 Feature hierarchy and domain packs</h3>
+<p>Every test case, knowledge document, learned pattern, and report is scoped to a node in a hierarchy:</p>
+<pre><code>Product / Project          e.g. &quot;Retail Banking App&quot;
+└── Module / Feature       e.g. Loans · Payments · Credit Cards · Accounts · KYC
+    └── Sub-feature        e.g. Loans → EMI calculator, Pre-closure, Top-up
+</code></pre>
+<p>Each feature carries its own <strong>context pack</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Context item</th>
+<th>Example (Banking → Payments)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glossary</td>
+<td>NEFT, RTGS, IMPS, UPI, beneficiary, cooling period</td>
+</tr>
+<tr>
+<td>Business rules</td>
+<td>Transaction limits; new-beneficiary limits for the first 24 hours</td>
+</tr>
+<tr>
+<td>Compliance notes</td>
+<td>Regulator- or bank-specific checks the client provides</td>
+</tr>
+<tr>
+<td>Test data rules</td>
+<td>Valid/invalid bank codes, masked account numbers, boundary amounts</td>
+</tr>
+<tr>
+<td>Coverage checklist</td>
+<td>Positive, negative, boundary, concurrency, limit, timeout, reversal scenarios</td>
+</tr>
+<tr>
+<td>Criticality</td>
+<td>Money movement, regulatory impact, customer-facing — feeds risk scoring (§10)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Domain packs</strong> are reusable industry starters (Banking, Insurance, Pharmacovigilance, Healthcare, E-commerce, Telecom): typical features, glossary, scenario checklists, and validation templates. A new client picks a domain pack and a jurisdiction pack (§4.4), then customizes them. Packs improve with each client in a domain, using only generalized, non-confidential patterns — never one client's data in another's pack.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Build the <strong>Banking</strong> pack first (your demo app is a bank, India + Gulf demand is strong), <strong>Pharmacovigilance</strong> second (high evidence pain, little competition).</p>
+</blockquote>
+<h3 id="43-per-project-technology-profile">4.3 Per-project technology profile</h3>
+<p>Not every client tests web, mobile, and API, and those who do use different languages and frameworks.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options (examples)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enabled test types</td>
+<td>Any combination of Manual · Web UI · Mobile · API</td>
+</tr>
+<tr>
+<td>Web framework + language</td>
+<td>Playwright (TypeScript / Python / Java / C#)</td>
+</tr>
+<tr>
+<td>Mobile</td>
+<td>Appium (Java / Python / JS); Android, iOS; real device farm or emulators</td>
+</tr>
+<tr>
+<td>API</td>
+<td>Playwright request · RestAssured (Java) · pytest + httpx</td>
+</tr>
+<tr>
+<td>Code conventions</td>
+<td>Page Object Model vs. screenplay; JUnit/TestNG/pytest/Playwright Test; Allure reporting</td>
+</tr>
+<tr>
+<td>Repo &amp; CI</td>
+<td>Git provider, repo/branch, CI system</td>
+</tr>
+<tr>
+<td>Test management</td>
+<td>Jira + Xray / Zephyr, TestRail, Azure Test Plans, qTest, or QualiFlow-native (§8.2)</td>
+</tr>
+<tr>
+<td>Data validation</td>
+<td>DB connections, test inbox, mock servers (§7)</td>
+</tr>
+<tr>
+<td>Heal PR strategy</td>
+<td>§9.1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>How it's enforced:</strong></p>
+<ul>
+<li><strong>Executor plugins.</strong> Each technology implements one interface — <code>generate()</code>, <code>run()</code>, <code>heal()</code>, <code>parse_results()</code>. A project loads only enabled plugins; adding Selenium or Cypress later means adding a plugin.</li>
+<li><strong>Router respects the profile.</strong> Cases needing a disabled type are flagged <em>"no executor enabled — keep manual or enable Web"</em>.</li>
+<li><strong>Runners provisioned to match.</strong> An API-only tenant never pays for browser or emulator capacity.</li>
+<li><strong>Plans and entitlements.</strong> Pricing tiers can gate mobile (device-farm cost) separately.</li>
+<li><strong>Convention learning.</strong> If the client connects an existing automation repo, the agent scans it to pre-fill the profile, and generated code follows their existing patterns.</li>
+</ul>
+<h3 id="44-jurisdiction-packs-international-coverage">4.4 Jurisdiction packs (international coverage)</h3>
+<p>Clients operate under the rules of where they do business. A bank in Riyadh, an insurer in the US, and a pharma company in the EU need different regulations, data-residency arrangements, languages, and test data. <strong>Jurisdiction packs</strong> combine with domain packs, e.g. <em>Banking × Saudi Arabia</em> or <em>Pharmacovigilance × USA</em>.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regulatory references and evidence templates</td>
+<td>Controls and records auditors in that jurisdiction typically expect, mapped to evidence features (§12)</td>
+</tr>
+<tr>
+<td>Data residency defaults</td>
+<td>Required hosting region, whether data may leave the country, self-hosted runner recommendation</td>
+</tr>
+<tr>
+<td>Retention defaults</td>
+<td>Typical record-retention periods for the domain and jurisdiction (client-confirmed)</td>
+</tr>
+<tr>
+<td>Local payment and business rails</td>
+<td>Domestic payment systems, e-invoicing, tax rules used in test scenarios</td>
+</tr>
+<tr>
+<td>Test data generators</td>
+<td>Valid-format national ID, tax ID, IBAN/account, phone, and address formats for synthetic data</td>
+</tr>
+<tr>
+<td>Locale</td>
+<td>Language, script direction, calendars, working week, date/number/currency formats</td>
+</tr>
+<tr>
+<td>Report templates</td>
+<td>Regulator-style and audit-style report layouts in the local language</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Starter coverage</strong> (illustrative; confirm current requirements with each client's compliance and legal teams, as regulations change):</p>
+<table>
+<thead>
+<tr>
+<th>Jurisdiction</th>
+<th>Banking / financial services</th>
+<th>Life sciences / pharmacovigilance</th>
+<th>Data protection &amp; other</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Saudi Arabia</strong></td>
+<td>SAMA regulations and Cyber Security Framework; NCA Essential Cybersecurity Controls; local rails (e.g. SARIE, mada, SADAD)</td>
+<td>SFDA pharmacovigilance requirements</td>
+<td>Personal Data Protection Law (PDPL); ZATCA e-invoicing (Fatoora); Arabic RTL, Hijri dates, Fri–Sat weekend, in-country hosting expectations</td>
+</tr>
+<tr>
+<td><strong>United States</strong></td>
+<td>SOX ITGC, FFIEC guidance, GLBA, NYDFS Part 500 (NY-regulated), PCI DSS; rails (ACH, Fedwire, RTP, FedNow)</td>
+<td>FDA 21 CFR Part 11, Computer Software Assurance, FAERS reporting</td>
+<td>HIPAA (healthcare), state privacy laws (e.g. CCPA/CPRA); state insurance regulation</td>
+</tr>
+<tr>
+<td><strong>European Union</strong></td>
+<td>DORA, EBA guidelines, PSD2/SEPA</td>
+<td>EU Annex 11, EMA GVP, EudraVigilance reporting</td>
+<td>GDPR; EU AI Act transparency expectations for AI-assisted processes</td>
+</tr>
+<tr>
+<td><strong>United Kingdom</strong></td>
+<td>FCA/PRA operational resilience; Faster Payments</td>
+<td>MHRA expectations</td>
+<td>UK GDPR</td>
+</tr>
+<tr>
+<td><strong>UAE</strong></td>
+<td>CBUAE regulations; DIFC/ADGM rules for free-zone entities</td>
+<td>Ministry of Health and Prevention pharmacovigilance</td>
+<td>UAE PDPL; DIFC/ADGM data protection; Arabic RTL</td>
+</tr>
+<tr>
+<td><strong>India</strong></td>
+<td>RBI, SEBI guidance; UPI, NEFT, RTGS, IMPS</td>
+<td>CDSCO / PvPI</td>
+<td>DPDP Act 2023; GST e-invoicing</td>
+</tr>
+<tr>
+<td><strong>Singapore</strong></td>
+<td>MAS Technology Risk Management guidelines</td>
+<td>HSA pharmacovigilance</td>
+<td>PDPA</td>
+</tr>
+</tbody>
+</table>
+<p>Common across regions: ICH E2B(R3) for safety reports, PCI DSS for card data, ISO 27001 and SOC 2 for vendor assurance.</p>
+<p><strong>How it works:</strong> packs are selected <strong>per project</strong> (a multinational can run a Saudi and a US project side by side); each tenant is pinned to a hosting region (§15.5); packs are versioned data with release notes so regulated clients can review changes before adopting them.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Start with <strong>India, USA, Saudi Arabia</strong>. Before selling into any new region, validate its pack with a local compliance consultant or design partner.</p>
+</blockquote>
+<h3 id="45-multilingual-support-and-localization">4.5 Multilingual support and localization</h3>
+<p>Multilingual support covers five distinct layers. All five are in scope.</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What's supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Platform UI</strong></td>
+<td>Fully internationalized (i18n) UI; English first, then Arabic (RTL), Hindi, French, Spanish, German, Japanese as demand appears. Per-user language and time zone</td>
+</tr>
+<tr>
+<td><strong>2. Requirements ingestion</strong></td>
+<td>Documents in any language the embedding model supports (e.g. Arabic BRDs, French specs) via <strong>multilingual embeddings</strong>; mixed-language documents handled; cross-language retrieval (an English query finds Arabic requirements)</td>
+</tr>
+<tr>
+<td><strong>3. Generated test cases</strong></td>
+<td>Generated in the project's chosen language(s): e.g. Arabic cases with English technical terms, or <strong>bilingual</strong> cases (two language fields per step). Glossary terms preserved exactly. Translation of existing cases between languages, with a QA lead review</td>
+</tr>
+<tr>
+<td><strong>4. Reports, emails, evidence</strong></td>
+<td>Rendered in each recipient's language with local date, number, currency, and calendar formats (Gregorian/Hijri), RTL layout for Arabic; PDF fonts embedded for non-Latin scripts</td>
+</tr>
+<tr>
+<td><strong>5. Testing localized apps (AUT)</strong></td>
+<td>Locale matrix runs (same test across languages/regions), translation completeness (missing or untranslated strings), RTL layout checks, text truncation/overflow, locale-specific formats, pseudo-localization runs to catch hard-coded strings early</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quality controls:</strong> language-specific eval sets (§20) measure case quality per language; style learning (§6.3) runs per language; the model tier mapping (§15.3) can choose a different model for a language where one provider is stronger.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Build i18n into the UI from day one (externalized strings, RTL-safe CSS) even if you only ship English at MVP — retrofitting it later is expensive. Ship <strong>Arabic</strong> with the first Gulf design partner.</p>
+</blockquote>
+<hr />
+<h2 id="5-knowledge-base-rag-with-delta-ingestion">5. Knowledge Base (RAG) with Delta Ingestion</h2>
+<p><strong>Sources:</strong> BRDs, FRDs, user stories, acceptance criteria, Jira/Azure DevOps tickets, Confluence/SharePoint pages, OpenAPI/Postman collections, release notes, UI screenshots, existing approved test cases, defect history.</p>
+<h3 id="51-ingestion-pipeline">5.1 Ingestion pipeline</h3>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    S[Source: upload / Confluence / Jira / Git] --&gt; D[Detect change&lt;br/&gt;doc hash + version]
+    D --&gt;|unchanged| SKIP[Skip]
+    D --&gt;|new or changed| P[Parse&lt;br/&gt;PDF, DOCX, XLSX, HTML]
+    P --&gt; C[Structure-aware chunking&lt;br/&gt;by heading / requirement ID]
+    C --&gt; H{Chunk hash&lt;br/&gt;changed?}
+    H --&gt;|no| KEEP[Keep existing embedding]
+    H --&gt;|yes| E[Embed + tag metadata&lt;br/&gt;org, product, feature, version, language]
+    E --&gt; V[(pgvector)]
+    D --&gt;|deleted| T[Tombstone chunks]
+    V --&gt; IMP[Impact analysis:&lt;br/&gt;which approved cases cite changed chunks?]
+</pre></div>
+<p><strong>Delta ingestion</strong> keeps cost and freshness under control:</p>
+<ul>
+<li><strong>Document-level hashing</strong> skips unchanged files entirely.</li>
+<li><strong>Chunk-level hashing</strong> re-embeds only the sections that changed in a revised BRD.</li>
+<li><strong>Versioning</strong> — old chunks are kept with a version tag, so every test case shows which document version it came from.</li>
+<li><strong>Tombstones</strong> remove deleted content from retrieval without losing audit history.</li>
+<li><strong>Connector sync</strong> — scheduled or webhook-triggered pulls from Confluence/Jira/Git fetch only items modified since the last sync.</li>
+<li><strong>Impact analysis</strong> — when a requirement changes, the platform lists the approved cases and scripts linked to the changed chunks and proposes updates for review: <em>"your BRD changed; these 14 cases need review."</em></li>
+</ul>
+<h3 id="52-retrieval-design-for-cost-and-latency">5.2 Retrieval design for cost and latency</h3>
+<table>
+<thead>
+<tr>
+<th>Technique</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Metadata pre-filter by product/feature/language</td>
+<td>Searches a small slice of the index; fewer, more relevant chunks</td>
+</tr>
+<tr>
+<td>Hybrid search (vector + keyword/BM25)</td>
+<td>Catches exact terms like requirement IDs, field names, error codes</td>
+</tr>
+<tr>
+<td>Reranker on top-k</td>
+<td>Sends 5–8 high-quality chunks instead of 30 mediocre ones → fewer tokens</td>
+</tr>
+<tr>
+<td>Prompt caching of stable context (feature pack, style guide)</td>
+<td>Lower cost and latency on repeated calls, where the provider supports it</td>
+</tr>
+<tr>
+<td>Semantic cache for repeated questions</td>
+<td>Skips the LLM for near-duplicate requests</td>
+</tr>
+<tr>
+<td>Model tiering (§15.3)</td>
+<td>Small model for parsing, tagging, linting; strong model only for generation</td>
+</tr>
+<tr>
+<td>Per-tenant token budgets</td>
+<td>Hard ceilings; alerts before overrun</td>
+</tr>
+</tbody>
+</table>
+<p>Tenant isolation applies here too: every chunk carries <code>org_id</code>, enforced by row-level security, so retrieval can never cross clients.</p>
+<hr />
+<h2 id="6-test-design">6. Test Design</h2>
+<h3 id="61-three-ways-cases-enter-the-platform">6.1 Three ways cases enter the platform</h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Input</th>
+<th>What the agent does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Generate (net-new)</strong></td>
+<td>User story, ticket, spec, BRD section, live app URL</td>
+<td>Drafts human-readable manual test cases (title, preconditions, steps, test data, expected results, priority, validation types) using the feature context and knowledge base</td>
+</tr>
+<tr>
+<td><strong>2. Convert manual suites</strong></td>
+<td>Excel/CSV, TestRail, Zephyr, Xray, Azure Test Plans (via import profiles, §13)</td>
+<td>Imports cases; flags ambiguous, duplicate, or non-automatable ones with suggested rewrites</td>
+</tr>
+<tr>
+<td><strong>3. Migrate existing automation</strong></td>
+<td>Selenium (Java/Python/C#), Cypress, Katalon, UFT/QTP, Robot Framework suites</td>
+<td>Reads the code (parsing + optional run-time trace) to recover each test's intent as a manual case, then regenerates it in the target framework (§7.1)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Migration detail (mode 3):</strong></p>
+<ol>
+<li><strong>Inventory</strong> — scan the legacy repo: test count, frameworks, utilities, data sources, flaky history.</li>
+<li><strong>Intent extraction</strong> — each legacy test becomes a reviewable manual case linked to its source file.</li>
+<li><strong>Regeneration</strong> — approved cases are generated as Playwright/Appium code following the target conventions; shared utilities become page objects and validation-kit calls.</li>
+<li><strong>Parity run</strong> — legacy and new suites run side by side against the same build; the platform compares results test by test.</li>
+<li><strong>Cutover report</strong> — parity %, gaps, tests intentionally dropped, and runtime savings, so the client can retire the old suite with confidence.</li>
+</ol>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Support <strong>Selenium Java → Playwright</strong> first. It's the most common legacy stack in Indian IT services and the clearest ROI story ("same coverage, faster, less flaky").</p>
+</blockquote>
+<h3 id="62-qa-lead-review-gate">6.2 QA lead review gate</h3>
+<p>No automation is generated until a human approves the manual case.</p>
+<table>
+<thead>
+<tr>
+<th>QA lead action</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Approve</strong></td>
+<td>Case becomes a valid manual test case <em>and</em> an <strong>automation candidate</strong></td>
+</tr>
+<tr>
+<td><strong>Edit</strong></td>
+<td>Lead corrects steps / expected results, then approves; the edited version is automated, and the edit diff is a learning signal (§6.3)</td>
+</tr>
+<tr>
+<td><strong>Reject</strong></td>
+<td>Archived with a reason (duplicate, out of scope, invalid); reasons feed learning and evals</td>
+</tr>
+<tr>
+<td><strong>Approve – manual only</strong></td>
+<td>Valid case that stays manual (visual judgement, physical device actions); executed via §8.2 and counted in coverage</td>
+</tr>
+</tbody>
+</table>
+<p>Approved cases sync to the client's test-management tool (§8.2). Automation candidates go to §7, where the SDET code review is a second gate.</p>
+<p><strong>Case lifecycle:</strong> <code>draft → in_review → approved (automation candidate | manual only) / rejected → automated → (deprecated)</code></p>
+<p>Configurable review rules: single or two-person approval, reviewer by feature, bulk approve for low-risk cases, and SLA reminders for pending reviews.</p>
+<h3 id="63-adaptive-generation-learning-from-qa-lead-reviews">6.3 Adaptive generation — learning from QA lead reviews</h3>
+<p>Every review action is a training signal. The platform learns each team's style <strong>per project, feature, and language</strong>, without fine-tuning first.</p>
+<p><strong>Captured:</strong> approved cases (as-is), edit diffs (before → after), rejections with reasons, "manual only" decisions.</p>
+<p><strong>How it adapts (increasing effort):</strong></p>
+<ol>
+<li><strong>Few-shot retrieval</strong> — when generating for <em>Payments → UPI</em>, include the most similar <em>approved</em> cases from that feature as examples.</li>
+<li><strong>Learned style guide</strong> — a background job distills edit diffs and rejections into explicit rules, e.g. <em>"Always include a login-state precondition"</em>, <em>"Expected results must name the exact error message"</em>, <em>"Rejected 12× as duplicate: don't create separate cases per currency."</em> The QA lead approves, edits, or deletes each rule — <strong>the team controls what the system learns.</strong></li>
+<li><strong>Template conformance</strong> — fields, naming, ID format, and priority scale enforced through structured output.</li>
+<li><strong>Fine-tuning (later, optional, consent-based)</strong> — a small domain model once a client has thousands of reviewed cases.</li>
+</ol>
+<p><strong>Proof it works:</strong> first-pass approval rate ↑, average edit size ↓, rejection rate ↓, time-to-approve ↓ — shown per project on the dashboard. A strong renewal argument.</p>
+<h3 id="64-versioning-by-release-and-branch">6.4 Versioning by release and branch</h3>
+<ul>
+<li>Every case and script is <strong>versioned</strong>; any version can be compared (diff) or restored.</li>
+<li>Cases carry <strong>applicability</strong> (from version X, until version Y, platforms, locales), so a hotfix branch runs the cases valid for that branch.</li>
+<li><strong>Baselines</strong> are frozen per release for audit (§12) and for comparing releases (§11).</li>
+<li>Script versions follow git; case versions are stored in QualiFlow and synced to the TMS.</li>
+</ul>
+<h3 id="65-collaboration">6.5 Collaboration</h3>
+<ul>
+<li>Review queues with assignment, due dates, and workload balancing across reviewers.</li>
+<li>Comments and @mentions on cases, scripts, runs, and defects; activity feed per project.</li>
+<li>Notifications by in-app, email, Slack, and Teams, each user choosing what and how often.</li>
+<li>Bulk operations (tag, assign, move feature, change priority) with audit.</li>
+</ul>
+<hr />
+<h2 id="7-automation-validation">7. Automation &amp; Validation</h2>
+<h3 id="71-script-generation">7.1 Script generation</h3>
+<p>For each approved automation candidate, the agent:</p>
+<ol>
+<li>Maps steps to the live app or API (Playwright MCP / Appium / OpenAPI) to resolve real locators and endpoints.</li>
+<li>Generates code in the project's framework and language, using page objects and <strong>validation-kit</strong> helpers (§7.2) rather than ad-hoc code.</li>
+<li>Dry-runs it in a sandbox; self-corrects on failure (bounded retries).</li>
+<li>Opens a PR linked to the source case ID; the SDET reviews it.</li>
+</ol>
+<h3 id="72-validation-kit-deterministic-checks-chosen-by-ai">7.2 Validation kit: deterministic checks, chosen by AI</h3>
+<p>Real enterprise tests rarely stop at "click and check text". They upload and download files, check databases, verify emails and OTPs, and recalculate business numbers. This is where most AI testing tools fall short.</p>
+<ul>
+<li><strong>QualiFlow Validation Kit</strong> — a library in Python, Java, and TypeScript, added as a dependency to the client's automation repo: file parsers and comparators, DB query and compare engine, calculation checker, test inbox client, mock-server hooks.</li>
+<li><strong>The AI chooses and wires the helpers.</strong> During case drafting it detects validation needs (<em>"user downloads monthly statement"</em> → download + PDF-content check; <em>"EMI shown on dashboard"</em> → UI-vs-DB + calculated-field check) and adds explicit validation steps the QA lead can see.</li>
+<li><strong>No LLM at runtime, no client data to the LLM.</strong> Validations run as plain code on the runner. The LLM sees only schemas and metadata (table/column names, file structure, masked samples if the client allows).</li>
+</ul>
+<h3 id="73-file-handling-upload-download-and-content-verification">7.3 File handling: upload, download, and content verification</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>How it's handled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Upload</strong> (single, multiple, drag-and-drop, hidden inputs)</td>
+<td>Playwright <code>setInputFiles</code> / file chooser; Appium <code>pushFile</code> + picker navigation; versioned <strong>fixture library</strong> per project</td>
+</tr>
+<tr>
+<td><strong>Negative uploads</strong></td>
+<td>Generated automatically: wrong type, oversize, empty, corrupted, malicious filename, duplicate, max-count exceeded</td>
+</tr>
+<tr>
+<td><strong>Generated test files</strong></td>
+<td>Synthesize CSV/Excel/XML/JSON fixtures from a template + data rules (e.g. 10,000-row bulk upload with valid/invalid mix)</td>
+</tr>
+<tr>
+<td><strong>Download</strong></td>
+<td>Playwright <code>download</code> event; mobile: pull from device storage. Verify filename pattern, extension, MIME type, size, completion</td>
+</tr>
+<tr>
+<td><strong>PDF</strong></td>
+<td>Text and table extraction (pdfplumber / Apache PDFBox), field-level checks (period, totals, masking), page count, logo/QR/barcode presence, metadata; reference-PDF comparison with ignore-regions</td>
+</tr>
+<tr>
+<td><strong>Excel</strong></td>
+<td>Sheets, headers, row counts, cell values, formats, formulas vs. values, merged cells (openpyxl / Apache POI)</td>
+</tr>
+<tr>
+<td><strong>CSV</strong></td>
+<td>Delimiter, encoding, header order, quoting, row count, column rules</td>
+</tr>
+<tr>
+<td><strong>XML / JSON</strong></td>
+<td>Schema validation (XSD / JSON Schema), XPath / JSONPath assertions, namespaces</td>
+</tr>
+<tr>
+<td><strong>Images / ZIP / DOCX</strong></td>
+<td>Dimensions/format, archive contents, DOCX text and tables</td>
+</tr>
+<tr>
+<td><strong>File ↔ UI ↔ DB</strong></td>
+<td>Downloaded report rows compared with what the UI showed and what the DB holds (§7.4)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="74-database-validation">7.4 Database validation</h3>
+<p><strong>Connections:</strong> per-environment data sources (PostgreSQL, MySQL, Oracle, SQL Server, DB2, MongoDB) with <strong>read-only</strong> credentials in the secrets vault, resolvable only on the runner. For data that can't leave the network, the self-hosted runner does all querying.</p>
+<p><strong>Schema awareness:</strong> the agent reads metadata (never data) to generate queries; the QA lead reviews generated SQL as part of the case.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>How it's handled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>UI → DB</strong></td>
+<td>After a UI action, query by business key and assert each persisted field, including defaults, status codes, audit columns</td>
+</tr>
+<tr>
+<td><strong>DB → UI</strong></td>
+<td>Seed or look up records; verify the UI displays them correctly (formatting, masking, sorting, pagination totals)</td>
+</tr>
+<tr>
+<td><strong>DB ↔ DB field-level</strong></td>
+<td>Source vs. target (core vs. reporting DB, pre/post migration, ETL in/out). <strong>Comparison engine</strong>: key matching, per-column rules (tolerance, rounding, trim/case, null equivalence, type coercion, date/time-zone normalization); mismatch report (missing in source/target, value diffs)</td>
+</tr>
+<tr>
+<td><strong>Calculated fields</strong></td>
+<td>§7.5</td>
+</tr>
+<tr>
+<td><strong>Aggregates &amp; reconciliation</strong></td>
+<td>Counts, sums, balances across tables or systems</td>
+</tr>
+<tr>
+<td><strong>Referential &amp; state checks</strong></td>
+<td>Orphans, duplicate keys, valid status transitions</td>
+</tr>
+<tr>
+<td><strong>Large volumes</strong></td>
+<td>Push comparison into the DB (hashing, set-difference) or stream in chunks</td>
+</tr>
+<tr>
+<td><strong>Eventual consistency</strong></td>
+<td>Poll with timeout and backoff, not fixed sleeps</td>
+</tr>
+</tbody>
+</table>
+<h3 id="75-calculated-field-validation">7.5 Calculated-field validation</h3>
+<p>Examples: EMI, interest accrual, penalty, tax/GST/VAT, discounts, premium, minimum due, currency conversion.</p>
+<ol>
+<li><strong>Extract the rule</strong> from the BRD into a <strong>business rule spec</strong>: formula, input sources (UI, DB, API), rounding mode, precision, tolerance, edge cases (zero rate, leap year, day-count conventions).</li>
+<li><strong>Human approval</strong> by the QA lead or business analyst — a wrong formula makes every test wrong.</li>
+<li><strong>Reference calculator</strong> — the approved rule becomes a unit-tested function with test vectors from the business.</li>
+<li><strong>Compare</strong> against UI, DB, API, and exported files, catching cases where layers round differently.</li>
+<li><strong>Boundary generation</strong> — min/max tenure, rates at limits, amounts at slab boundaries.</li>
+</ol>
+<h3 id="76-other-enterprise-scenarios">7.6 Other enterprise scenarios</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>How it's handled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Email</strong> (welcome, statements, alerts, reset)</td>
+<td>Test inbox (Mailpit/MailHog self-hosted, or hosted services like Mailosaur/Mailtrap): wait by recipient/subject, assert content, extract links and attachments</td>
+</tr>
+<tr>
+<td><strong>OTP / MFA</strong></td>
+<td>Test-mode OTP via inbox, SMS test service, or test-only API; TOTP from a test secret. Never bypassed in production</td>
+</tr>
+<tr>
+<td><strong>Payment gateways</strong></td>
+<td>Sandbox credentials and test cards; verify redirect, callback/webhook, final status in UI and DB</td>
+</tr>
+<tr>
+<td><strong>Third-party dependencies</strong></td>
+<td>Network interception (Playwright <code>route</code>; WireMock for mobile/API): timeouts, 500s, slow responses</td>
+</tr>
+<tr>
+<td><strong>Hybrid API + UI</strong></td>
+<td>Set up data via API, verify via UI (or vice versa) — much faster and more reliable</td>
+</tr>
+<tr>
+<td><strong>Async jobs &amp; events</strong></td>
+<td>Batch jobs, schedulers, file drops (SFTP/S3), queues (Kafka, RabbitMQ, IBM MQ): trigger, wait, assert</td>
+</tr>
+<tr>
+<td><strong>Role-based access</strong></td>
+<td>Role × permission matrix from requirements; verify each role in UI and API, including direct-URL attempts</td>
+</tr>
+<tr>
+<td><strong>Session &amp; security basics</strong></td>
+<td>Timeout, concurrent login, logout invalidation, back-button after logout, masking, no sensitive data in URLs/storage</td>
+</tr>
+<tr>
+<td><strong>Audit trail</strong></td>
+<td>Actions create correct audit entries (who/what/when/before-after)</td>
+</tr>
+<tr>
+<td><strong>Reports &amp; dashboards</strong></td>
+<td>Numbers verified against DB aggregates, read from DOM or the feeding API — not from pixels</td>
+</tr>
+<tr>
+<td><strong>Complex UI elements</strong></td>
+<td>iframes, shadow DOM, multiple tabs/pop-ups, rich-text editors, date pickers, infinite scroll, drag-and-drop, canvas (via underlying data)</td>
+</tr>
+<tr>
+<td><strong>Data-driven tests</strong></td>
+<td>Parameterized from Excel/CSV/DB data sets, versioned with tests</td>
+</tr>
+<tr>
+<td><strong>Localization</strong></td>
+<td>Locale matrix, translation completeness, RTL, formats (§4.5)</td>
+</tr>
+<tr>
+<td><strong>Accessibility</strong></td>
+<td>axe-core scans (web), accessibility-tree checks (mobile); WCAG findings report</td>
+</tr>
+<tr>
+<td><strong>Browser permissions &amp; time</strong></td>
+<td>Geolocation, notifications, clipboard, camera mocks; time-zone and clock control for due dates and expiries</td>
+</tr>
+<tr>
+<td><strong>CAPTCHA</strong></td>
+<td>Only via test-environment configuration (disabled or test keys); never solved</td>
+</tr>
+</tbody>
+</table>
+<h3 id="77-mobile-specific-scenarios">7.7 Mobile-specific scenarios</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>How it's handled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Permissions</strong></td>
+<td>Pre-grant via capabilities or handle dialogs; test allow and deny paths</td>
+</tr>
+<tr>
+<td><strong>Push notifications</strong></td>
+<td>Trigger via backend/test API; verify notification content and tap-to-open</td>
+</tr>
+<tr>
+<td><strong>Deep links / universal links</strong></td>
+<td>Launch via URL; verify screen and state, including logged-out redirect</td>
+</tr>
+<tr>
+<td><strong>Biometrics</strong></td>
+<td>Simulated fingerprint/Face ID on emulators/simulators and supported farms; success, failure, PIN fallback</td>
+</tr>
+<tr>
+<td><strong>Camera / QR / document scan</strong></td>
+<td>Inject images into the camera feed where supported; otherwise mock the scanner result</td>
+</tr>
+<tr>
+<td><strong>GPS / location</strong></td>
+<td>Mock location; geofencing and location-based offers</td>
+</tr>
+<tr>
+<td><strong>Network conditions</strong></td>
+<td>Offline, airplane mode, slow networks, Wi-Fi ↔ mobile data; offline queueing and sync</td>
+</tr>
+<tr>
+<td><strong>Interruptions &amp; lifecycle</strong></td>
+<td>Backgrounding/resume, incoming call, low memory, app kill and restore, screen lock</td>
+</tr>
+<tr>
+<td><strong>Rotation &amp; screen sizes</strong></td>
+<td>Portrait/landscape; small phones to tablets; foldables where relevant</td>
+</tr>
+<tr>
+<td><strong>Hybrid apps / WebViews</strong></td>
+<td>Context switching; reuse web locator strategies inside WebViews</td>
+</tr>
+<tr>
+<td><strong>SMS OTP autofill</strong></td>
+<td>Test SMS service or emulator SMS injection</td>
+</tr>
+<tr>
+<td><strong>Install &amp; upgrade</strong></td>
+<td>Fresh install, upgrade with existing data, reinstall, forced-update prompts</td>
+</tr>
+<tr>
+<td><strong>In-app purchases</strong></td>
+<td>Store sandbox accounts; entitlement in app and backend</td>
+</tr>
+<tr>
+<td><strong>Device matrix</strong></td>
+<td>Smoke on many devices, full regression on a representative few (cost control)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="78-how-validations-appear-in-the-product">7.8 How validations appear in the product</h3>
+<ul>
+<li>Each case step shows its <strong>validation type</strong> (UI, file, DB, calculation, email, …).</li>
+<li><strong>Capability check</strong> at review time: a case needing an unconfigured DB or inbox is flagged then, not at runtime.</li>
+<li><strong>Evidence</strong> includes downloaded files, extracted values, SQL used, masked DB rows, calculation inputs/outputs.</li>
+<li><strong>Triage</strong> reports a failed DB comparison with the exact mismatched fields, not a generic assertion error.</li>
+</ul>
+<h3 id="79-non-functional-testing-later-phases">7.9 Non-functional testing (later phases)</h3>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Approach</th>
+<th>Phase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Performance smoke</strong></td>
+<td>Reuse API tests as load scripts (k6 or Locust) for quick latency/throughput checks; Lighthouse for web page performance</td>
+<td>Phase 5</td>
+</tr>
+<tr>
+<td><strong>Security baseline</strong></td>
+<td>OWASP ZAP baseline scans on web/API; dependency and header checks; findings into triage</td>
+<td>Phase 5</td>
+</tr>
+<tr>
+<td><strong>Visual regression</strong></td>
+<td>Screenshot comparison with ignore regions, or integration with an existing visual tool</td>
+<td>Phase 5</td>
+</tr>
+<tr>
+<td><strong>Contract testing</strong></td>
+<td>Consumer-driven contracts (e.g. Pact) generated from OpenAPI and observed traffic, for microservice teams</td>
+<td>Phase 5</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Keep these as integrations or light features, not full products — the core value is functional testing. Mention them in sales as "on the roadmap" because enterprise buyers ask.</p>
+</blockquote>
+<hr />
+<h2 id="8-test-execution">8. Test Execution</h2>
+<h3 id="81-automated-execution">8.1 Automated execution</h3>
+<ul>
+<li><strong>Execution grid:</strong> ephemeral, isolated containers per run (cloud runners on Kubernetes, or self-hosted runners in the client network); parallel and sharded by historical duration.</li>
+<li><strong>Triggers:</strong> CI pipelines (GitHub Actions, GitLab, Jenkins, Azure DevOps) via CLI or API; schedules; manual runs; release-intelligence selections (§10).</li>
+<li><strong>Browsers and devices:</strong> Chromium, Firefox, WebKit; Android/iOS emulators locally, real devices via device farms (BrowserStack, Sauce Labs, AWS Device Farm).</li>
+<li><strong>Results:</strong> per-step results, Playwright traces, videos, screenshots, logs, and evidence packages (§12) — pushed to the TMS (§8.2) and reports (§11).</li>
+</ul>
+<h3 id="82-manual-execution-synced-with-jira-and-test-management-tools-no-duplicate-work">8.2 Manual execution — synced with Jira and test-management tools (no duplicate work)</h3>
+<p>Manual cases must be executed and evidenced too, but teams already execute them in Jira-based tools. QualiFlow <strong>syncs with those tools instead of replacing them</strong>, so nobody records the same result twice.</p>
+<p><strong>Choose a system of record per project:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Client setup</th>
+<th>How QualiFlow works with it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Jira + Xray / Zephyr Scale</strong>, TestRail, Azure Test Plans, qTest</td>
+<td><strong>Bi-directional sync.</strong> Approved cases are created/updated in the TMS once; testers execute manual cases in their usual tool; QualiFlow pulls execution results, comments, and attachments back. Automated run results are pushed into the same test executions/cycles. One combined view of manual + automated status</td>
+</tr>
+<tr>
+<td><strong>Plain Jira</strong> (no test add-on)</td>
+<td>Cases stored in QualiFlow, linked to Jira stories via issue links; executions done in QualiFlow's manual runner; results and defects posted back to the Jira story</td>
+</tr>
+<tr>
+<td><strong>No tool</strong></td>
+<td>QualiFlow-native manual execution (below) is the system of record</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sync rules that prevent duplicates and conflicts:</strong></p>
+<ul>
+<li><strong>External IDs</strong> on every case, execution, and defect — re-syncing updates the same item, never creates a copy.</li>
+<li><strong>Field ownership</strong> configured per project (e.g. steps and expected results owned by QualiFlow after approval; execution status owned by the TMS for manual runs).</li>
+<li><strong>Change detection</strong> via webhooks with polling fallback; idempotent, retried operations; full sync history in the audit log.</li>
+<li><strong>Conflict handling:</strong> if both sides changed the same field, the configured owner wins and the other change is kept as a comment for review.</li>
+<li><strong>Field mapping</strong> uses the same profiles as import/export (§13), including custom fields.</li>
+<li><strong>Defect de-duplication:</strong> before raising a defect from a failure, search open Jira bugs for the same root cause and link instead of creating a duplicate.</li>
+</ul>
+<p><strong>QualiFlow-native manual runner</strong> (for plain-Jira or no-tool setups, and for evidence-heavy regulated work):</p>
+<ul>
+<li>Step-by-step execution UI: pass/fail/blocked per step, actual result, attachments, timing.</li>
+<li><strong>Automatic evidence capture</strong> with an optional browser extension (screenshots per step, URL, timestamp) and mobile screen capture.</li>
+<li><strong>One-click defect</strong> from a failed step, pre-filled with steps, evidence, environment, and build, created in Jira.</li>
+<li>Assignments, test cycles, and progress tracking; execution in the tester's language.</li>
+<li>Same tamper-evident evidence and e-signatures as automated runs (§12).</li>
+<li><strong>Automation suggestions:</strong> manual cases executed most often (or that keep failing) are flagged as automation candidates.</li>
+</ul>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> In v1.0 (Phase 2), support <strong>Jira + Xray</strong> (very common in enterprises) and <strong>TestRail</strong> for sync; at MVP, exporting approved cases to CSV/Excel is enough; add Zephyr Scale and Azure Test Plans next. Build the native manual runner after sync is solid — many clients won't need it.</p>
+</blockquote>
+<h3 id="83-environments-and-pre-flight-checks">8.3 Environments and pre-flight checks</h3>
+<ul>
+<li>Environment registry per project: URLs, versions deployed, feature flags, data sources, classification (§8.5).</li>
+<li><strong>Pre-flight check</strong> before a regression: services reachable, expected versions deployed, test data present, test accounts valid. A failed pre-flight stops the run with a clear reason instead of hundreds of misleading failures.</li>
+<li><strong>Environment booking</strong> to avoid teams colliding on shared environments.</li>
+</ul>
+<h3 id="84-test-data-management">8.4 Test data management</h3>
+<ul>
+<li><strong>Synthetic data generators</strong> with valid-format IDs per jurisdiction (§4.4), including edge cases.</li>
+<li><strong>Create-and-cleanup</strong> per test or per suite; <strong>data reservation</strong> so parallel runs don't share accounts.</li>
+<li><strong>Masking</strong> for any copy of production-like data; masking rules configurable per field.</li>
+<li><strong>Data sets versioned</strong> with tests; data-driven runs from Excel/CSV/DB.</li>
+<li><strong>Data health</strong> dashboard: expiring test accounts, exhausted pools.</li>
+</ul>
+<h3 id="85-safety-guardrails-for-agents-and-runs">8.5 Safety guardrails for agents and runs</h3>
+<p>Agents and tests can delete data, trigger payments, or send emails if an environment is wired to real services.</p>
+<table>
+<thead>
+<tr>
+<th>Guardrail</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Environment classification</strong></td>
+<td>Each environment tagged production / pre-production / UAT / QA / dev. <strong>Production is blocked</strong> for agents and test runs by default; the only production mode is opt-in, read-only synthetic monitoring</td>
+</tr>
+<tr>
+<td><strong>Action policies</strong></td>
+<td>Per environment: allowed domains, blocked HTTP methods or endpoints (e.g. DELETE on admin APIs), blocked UI actions (e.g. "close account") unless a case explicitly allows them</td>
+</tr>
+<tr>
+<td><strong>Sandboxed side effects</strong></td>
+<td>Payments only via sandbox gateways; email and SMS only to test inboxes/domains; outbound calls to unknown hosts blocked from runners</td>
+</tr>
+<tr>
+<td><strong>Rate limits</strong></td>
+<td>Caps on requests per second against the app under test, so tests don't act like a load attack</td>
+</tr>
+<tr>
+<td><strong>Approval for risky steps</strong></td>
+<td>Steps flagged risky (bulk delete, data reset) need a named approver before first run</td>
+</tr>
+<tr>
+<td><strong>Kill switch</strong></td>
+<td>Stop all runs and agents for a project or tenant instantly</td>
+</tr>
+<tr>
+<td><strong>Prompt-injection defence</strong></td>
+<td>Content from the app under test is untrusted; tool allow-lists per agent node; no secrets in LLM context (§18)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-test-maintenance">9. Test Maintenance</h2>
+<h3 id="91-self-healing-how-heals-and-prs-work">9.1 Self-healing — how heals and PRs work</h3>
+<p><strong>Default: one PR per run, grouped by root cause — not one PR per failure.</strong> One broken locator in a shared page object can fail 40 tests; 40 PRs would flood reviewers.</p>
+<ol>
+<li><strong>Collect</strong> all locator/element failures after a run (and its retries).</li>
+<li><strong>Group by root cause</strong> — same page-object element, same selector, or same screen change. Fix once, <strong>at the page-object level</strong>.</li>
+<li><strong>Heal each group</strong> — inspect DOM / page source + screenshot, propose a locator (prefer test IDs, roles, accessible names), <strong>re-run every affected test</strong> in a sandbox.</li>
+<li><strong>Score confidence</strong> — all affected tests pass and the element's role/label/position match the original intent.</li>
+<li><strong>Open or update one PR</strong> for the run: one <strong>commit per root cause</strong>; PR table of root causes → affected tests → old/new locator → before/after screenshots → confidence. If an open heal PR exists, <strong>update it</strong>.</li>
+<li><strong>Low-confidence or non-locator failures</strong> go to triage as "needs human" or a draft bug.</li>
+</ol>
+<p><strong>Hard rule:</strong> healing changes only <em>how an element is found</em> (locators, waits, navigation). It <strong>never changes assertions or expected values</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>PR strategy (per project)</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Per run, grouped by root cause</strong> (default)</td>
+<td>Most teams</td>
+</tr>
+<tr>
+<td>Per root cause</td>
+<td>Large teams with page-object owners</td>
+</tr>
+<tr>
+<td>Per failure</td>
+<td>Small suites or strict audit environments</td>
+</tr>
+<tr>
+<td>Daily digest</td>
+<td>High-frequency CI hitting the same break</td>
+</tr>
+<tr>
+<td>Auto-merge above confidence threshold</td>
+<td>Opt-in, mature teams; audit-logged and revertable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>In-run healing (optional):</strong> a high-confidence heal applied temporarily so a CI run can finish, marked "passed with heals"; the permanent fix still goes through the PR.</p>
+<h3 id="92-failure-triage-and-defects">9.2 Failure triage and defects</h3>
+<ul>
+<li>Classifies each failure: <strong>product bug / test bug / flaky / environment / data</strong> with evidence and confidence.</li>
+<li>Uses logs, traces, screenshots, network calls, recent deployments, and similar past failures (RAG over failure history).</li>
+<li>Drafts a defect with reproduction steps and evidence; <strong>de-duplicates</strong> against open defects (§8.2) and links instead of duplicating.</li>
+<li><strong>Defect clustering</strong> by feature and root cause shows where quality is weakest.</li>
+<li><strong>Defect escape analysis</strong> (§10.5) feeds back into selection and case generation.</li>
+</ul>
+<h3 id="93-flaky-test-management">9.3 Flaky test management</h3>
+<p>Statistical flakiness detection (pass/fail on same build), automatic <strong>quarantine</strong> from sign-off, fix task with an owner, time-to-fix tracking, and a flakiness index per suite.</p>
+<h3 id="94-suite-hygiene">9.4 Suite hygiene</h3>
+<p>Detect duplicate, obsolete (feature removed), and never-failing-but-expensive tests; propose consolidation; find <strong>coverage gaps</strong> (requirements, features, APIs, roles with no approved case or no automation) and feed them to case generation.</p>
+<hr />
+<h2 id="10-release-intelligence">10. Release Intelligence</h2>
+<p>Running everything on every release is slow; running too little lets defects escape. QualiFlow recommends <strong>which tests to run for this release, and why</strong>, and the QA lead approves.</p>
+<h3 id="101-traceability-graph">10.1 Traceability graph</h3>
+<pre><code>Requirement / story ── Feature ── Test case ── Automated script
+        │                 │            │              │
+   BRD chunk(s)      Risk rating   Defects found   Code areas / APIs / screens / DB tables touched
+</code></pre>
+<p>Built from the generation flow, the knowledge base, runtime traces (URLs, endpoints, screens, tables each script touches), and optional code-coverage data. QA leads can add or correct links.</p>
+<h3 id="102-what-changed">10.2 What changed</h3>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Release scope</td>
+<td>Jira / Azure DevOps fix version, epics, stories, bugs fixed</td>
+</tr>
+<tr>
+<td>Requirement changes</td>
+<td>Delta ingestion impact report (§5.1)</td>
+</tr>
+<tr>
+<td>API changes</td>
+<td>OpenAPI spec diff between versions</td>
+</tr>
+<tr>
+<td>Code changes</td>
+<td>Git diff between release tags, mapped to tests via traces/coverage</td>
+</tr>
+<tr>
+<td>UI changes</td>
+<td>Screen fingerprint diff from the last baseline run</td>
+</tr>
+<tr>
+<td>Data changes</td>
+<td>DB migrations, config and feature-flag changes</td>
+</tr>
+<tr>
+<td>Production signals (optional)</td>
+<td>Recent incidents; most-used journeys from analytics</td>
+</tr>
+</tbody>
+</table>
+<h3 id="103-risk-based-scoring">10.3 Risk-based scoring</h3>
+<p>Each test is scored for the release from: <strong>change proximity</strong>, <strong>business criticality</strong> (feature pack), <strong>defect history</strong>, <strong>recency</strong>, <strong>reliability</strong> (flaky tests down-weighted), and <strong>cost</strong>. Scoring is deterministic and explainable; an LLM only writes the explanation, e.g. <em>"selected because story LN-482 changed EMI calculation and this test verifies EMI on the dashboard and PDF statement."</em></p>
+<h3 id="104-suite-types">10.4 Suite types</h3>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Purpose</th>
+<th>How it's built</th>
+<th>Typical trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Smoke / build verification</strong></td>
+<td>Is the build testable?</td>
+<td>Fixed critical-path set</td>
+<td>Every deployment</td>
+</tr>
+<tr>
+<td><strong>Sanity</strong></td>
+<td>Do changed areas basically work?</td>
+<td>Tests directly linked to changed items</td>
+<td>After smoke</td>
+</tr>
+<tr>
+<td><strong>Mini (targeted) regression</strong></td>
+<td>Changed areas + neighbours, risk-ranked</td>
+<td>Score threshold, or best coverage within a time budget</td>
+<td>Sprint/minor releases</td>
+</tr>
+<tr>
+<td><strong>Full regression</strong></td>
+<td>Everything</td>
+<td>All active tests</td>
+<td>Major releases, platform upgrades, periodic safety net</td>
+</tr>
+<tr>
+<td><strong>Hotfix</strong></td>
+<td>Minimum safe set</td>
+<td>Sanity for the fix + smoke + mandatory set</td>
+<td>Production hotfix</td>
+</tr>
+<tr>
+<td><strong>Mandatory / compliance set</strong></td>
+<td>Always runs</td>
+<td>Tagged by QA lead (limits, KYC, audit trail)</td>
+<td>Every regression</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Time-budget mode:</strong> <em>"2 hours, 10 runners"</em> → highest risk coverage that fits, riskiest first (fail-fast).</li>
+<li><strong>Manual + automated together:</strong> recommendations include manual-only cases, with estimated tester effort.</li>
+<li><strong>Residual-risk statement:</strong> what is not covered and why — the skip decision is explicit and recorded.</li>
+<li><strong>Approval gate:</strong> the QA lead adjusts and approves; selection and approver stored for audit.</li>
+</ul>
+<h3 id="105-safety-nets-and-learning">10.5 Safety nets and learning</h3>
+<ul>
+<li><strong>Scheduled full regression</strong> (e.g. weekly or before major releases).</li>
+<li><strong>Defect escape analysis</strong> — for production defects: could a test have caught it, was it skipped? Tunes weights and proposes a new case.</li>
+<li><strong>Regression recall</strong> — occasionally run the full suite in the background to measure how many would-fail tests the selection included.</li>
+</ul>
+<h3 id="106-release-readiness-and-shift-left">10.6 Release readiness and shift-left</h3>
+<ul>
+<li><strong>Release readiness score:</strong> pass rate of selected tests, open critical defects, scope coverage, manual execution progress, flakiness → go / no-go recommendation with named sign-off.</li>
+<li><strong>Quality gates</strong> in CI (e.g. no open criticals, ≥ 95% pass on mandatory set).</li>
+<li><strong>PR-level checks:</strong> on a developer PR, run tests linked to the changed code before merge.</li>
+</ul>
+<hr />
+<h2 id="11-role-based-reporting-insights">11. Role-Based Reporting &amp; Insights</h2>
+<p>Same data, different questions per role. All numbers are computed deterministically; AI writes narrative summaries in which every figure links to its source data.</p>
+<h3 id="111-reports-by-role">11.1 Reports by role</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Key questions</th>
+<th>Main views</th>
+<th>Cadence / channel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>QA engineer</strong></td>
+<td>What failed, why, what next?</td>
+<td>My review queue, failures with triage and evidence, heal PRs, my manual executions, flaky tests I own</td>
+<td>Real-time; Slack/Teams alerts</td>
+</tr>
+<tr>
+<td><strong>Developer</strong></td>
+<td>Did my change break anything?</td>
+<td>PR-linked results, failure evidence, reproduction steps</td>
+<td>In PR / CI checks</td>
+</tr>
+<tr>
+<td><strong>QA lead</strong></td>
+<td>Is the release on track; is the suite healthy; is the AI helping?</td>
+<td>Scope coverage, selection and residual risk, manual + automated progress, pass/fail trend, flakiness, approval/edit rates, team workload</td>
+<td>Daily; end-of-run summary</td>
+</tr>
+<tr>
+<td><strong>QA / test manager</strong></td>
+<td>Are we efficient and improving across projects?</td>
+<td>Automation coverage, story → automated-test cycle time, defect leakage, maintenance saved by healing, cost per run</td>
+<td>Weekly</td>
+</tr>
+<tr>
+<td><strong>Engineering / delivery manager</strong></td>
+<td>Can we ship? Bottlenecks?</td>
+<td>Release readiness, open criticals, environment downtime, blocked tests</td>
+<td>Per release; go/no-go pack</td>
+</tr>
+<tr>
+<td><strong>C-level (CTO / CIO / Head of Quality)</strong></td>
+<td>Is quality improving; cost; risk?</td>
+<td>Quality trend, release confidence, escaped defects, automation ROI, compliance status</td>
+<td>Monthly/quarterly 1-page summary</td>
+</tr>
+<tr>
+<td><strong>Client partner / account manager</strong> (services firms)</td>
+<td>Is my account healthy; where can we grow?</td>
+<td>SLA adherence, delivery KPIs, utilization, upsell signals (low-coverage features, manual-heavy areas)</td>
+<td>Monthly account review</td>
+</tr>
+<tr>
+<td><strong>Client stakeholder</strong></td>
+<td>What did we get; is the release ready?</td>
+<td>Client-branded status: scope tested, results, defects, coverage, recommendation</td>
+<td>Per release/sprint; scheduled PDF</td>
+</tr>
+<tr>
+<td><strong>Auditor / compliance officer</strong></td>
+<td>Can you prove what was tested, by whom, when?</td>
+<td>Traceability matrix, evidence packages, approvals and signatures (§12)</td>
+<td>On demand; read-only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="112-value-adding-report-features">11.2 Value-adding report features</h3>
+<ul>
+<li><strong>AI narrative summaries</strong> backed by linked data.</li>
+<li><strong>Ask your test data</strong> — natural-language questions answered by generated queries, with the query shown and results scoped by permissions.</li>
+<li><strong>Automation ROI</strong> — hours saved by generation, conversion, migration, and healing vs. client-set manual baselines; cost per run; trend. The renewal number.</li>
+<li><strong>Release comparison</strong> — this release vs. the last three.</li>
+<li><strong>Quality gates</strong> that block or flag releases in CI.</li>
+<li><strong>White-labelled client portal</strong> for services firms, scoped per client.</li>
+<li><strong>Drill-down</strong> from any executive number to the runs, screenshots, and logs behind it.</li>
+<li><strong>Benchmarks</strong> across projects within an organization (never across clients).</li>
+<li><strong>Localized</strong> in each viewer's language and formats (§4.5).</li>
+</ul>
+<h3 id="113-email-delivery">11.3 Email delivery</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Design</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Triggers</strong></td>
+<td>Scheduled (daily/weekly/monthly/per sprint), event-based (run finished, readiness changed, quality gate failed, critical defect, heal PR waiting, review overdue), or on demand</td>
+</tr>
+<tr>
+<td><strong>Recipients</strong></td>
+<td>Per-role subscriptions, named users, distribution lists; self-service subscribe/unsubscribe</td>
+</tr>
+<tr>
+<td><strong>Format</strong></td>
+<td>Responsive HTML with key numbers and narrative, plus PDF/Excel attachment or the client's own format (§13)</td>
+</tr>
+<tr>
+<td><strong>Localization</strong></td>
+<td>Recipient's language, time zone, and formats; RTL for Arabic</td>
+</tr>
+<tr>
+<td><strong>Sensitive content</strong></td>
+<td>Secure link (login + expiry) instead of attachments for confidential/regulated projects; optional password-protected attachments; evidence and PII never attached</td>
+</tr>
+<tr>
+<td><strong>Recipient controls</strong></td>
+<td>Admin-defined allowed email domains per project</td>
+</tr>
+<tr>
+<td><strong>Infrastructure</strong></td>
+<td>Transactional provider (e.g. Amazon SES, SendGrid, Postmark) or the client's SMTP relay; custom sending domain with SPF, DKIM, DMARC; white-labelled sender</td>
+</tr>
+<tr>
+<td><strong>Reliability &amp; audit</strong></td>
+<td>Bounce/complaint handling, retries; every sent report logged (version, recipients, time)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Make the <strong>monthly executive one-pager</strong> and the <strong>client-branded release report</strong> polished early — they are what buyers forward internally, and they sell the next renewal.</p>
+</blockquote>
+<hr />
+<h2 id="12-compliance-audit-ready-evidence">12. Compliance &amp; Audit-Ready Evidence</h2>
+<p>Regulated clients must prove <em>what was tested, against which requirement, on which version, with what result, approved by whom</em>. Producing this automatically is a strong reason to buy.</p>
+<blockquote>
+<p>QualiFlow provides evidence and controls that <strong>support</strong> a client's compliance obligations. The client remains responsible for compliance; requirements should be confirmed with their quality, compliance, and legal teams.</p>
+</blockquote>
+<h3 id="121-evidence-package-per-execution-automated-and-manual">12.1 Evidence package per execution (automated and manual)</h3>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context</td>
+<td>Who triggered/executed it, when (UTC + local), environment, app build, script version (git SHA) or case version, data set version, runner, browser/device/OS</td>
+</tr>
+<tr>
+<td>Step evidence</td>
+<td>Action, expected vs. actual, timestamped screenshots, video, trace / Appium logs; manual: tester's step results and captures</td>
+</tr>
+<tr>
+<td>Validation evidence</td>
+<td>Files, extracted values, SQL and masked results, calculation inputs/outputs (§7)</td>
+</tr>
+<tr>
+<td>Technical logs</td>
+<td>Console, network HAR (masked), API requests/responses</td>
+</tr>
+<tr>
+<td>Outcome</td>
+<td>Pass/fail per step and overall, linked defects, re-test results</td>
+</tr>
+<tr>
+<td>Integrity</td>
+<td>SHA-256 hash per artifact, chained per run; package hash in an append-only ledger</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tamper evidence:</strong> WORM storage (e.g. S3 Object Lock in compliance mode), hash-chained audit records, optional trusted timestamps (RFC 3161). <strong>Readable without QualiFlow:</strong> exportable as PDF/A + original artifacts + JSON manifest.</p>
+<h3 id="122-end-to-end-traceability">12.2 End-to-end traceability</h3>
+<pre><code>Requirement (version) → Risk assessment → Test case (version, approver) → Selection decision (approver)
+  → Execution (evidence package) → Defect → Fix → Re-test → Release sign-off
+</code></pre>
+<p>Generated automatically; exportable per release, feature, or requirement in client formats.</p>
+<h3 id="123-electronic-approvals-and-signatures">12.3 Electronic approvals and signatures</h3>
+<p>For clients that need them (e.g. 21 CFR Part 11 / EU Annex 11 expectations): re-authentication at signing; signer, date/time, and <strong>meaning</strong> (authored, reviewed, approved, executed) recorded; signature bound to the exact record version (changes invalidate it); configurable workflows (two-person review, separate release approver); <strong>segregation of duties</strong> (author ≠ approver ≠ executor) enforceable.</p>
+<h3 id="124-ai-transparency-and-governance">12.4 AI transparency and governance</h3>
+<ul>
+<li>For every AI-produced artifact (case, script, heal, triage verdict, selection, rule spec, report narrative): model and provider, tier, prompt template version, retrieved sources and versions, style rules applied, the human approver and their changes.</li>
+<li><strong>Frozen configurations</strong> in validated environments: model and prompt versions change only through the client's change control.</li>
+<li><strong>Responsible AI policy</strong> published for customers: human oversight points, data use, limitations.</li>
+<li><strong>Frameworks to align with:</strong> ISO/IEC 42001 (AI management system), EU AI Act transparency expectations, and bank model-risk guidance (e.g. SR 11-7 in the US) where clients treat AI outputs as models.</li>
+</ul>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Pursue <strong>ISO 27001 or SOC 2 first</strong>; consider ISO 42001 after a few regulated customers ask for it. Don't spend on certifications before revenue.</p>
+</blockquote>
+<h3 id="125-data-integrity-alcoa">12.5 Data integrity (ALCOA+)</h3>
+<p>Attributable, Legible, Contemporaneous, Original, Accurate, plus Complete, Consistent, Enduring, Available: user attribution on every action, server-side timestamps, originals retained alongside derived reports, no hard deletes (soft delete with reason and audit), configurable retention, legal hold.</p>
+<h3 id="126-domain-specific-considerations">12.6 Domain-specific considerations</h3>
+<p>Examples below mix several countries; the jurisdiction pack (§4.4) selects what applies to each project.</p>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Typical evidence needs</th>
+<th>How QualiFlow supports them</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Banking / financial services</strong></td>
+<td>Change-management evidence for IT controls (e.g. SOX ITGC), regulator expectations on IT and outsourcing (e.g. RBI/SEBI, SAMA, DORA), PCI DSS for card data</td>
+<td>Release traceability and sign-off, segregation of duties, card and account masking, self-hosted runners for residency</td>
+</tr>
+<tr>
+<td><strong>Pharmacovigilance / life sciences</strong></td>
+<td>GxP computerized system validation, 21 CFR Part 11 and EU Annex 11, GAMP 5 and risk-based assurance (e.g. FDA's Computer Software Assurance approach)</td>
+<td>E-signatures, frozen validated configurations, risk-based selection with documented rationale, IQ/OQ/PQ-style execution records</td>
+</tr>
+<tr>
+<td>↳ PV-specific scenarios</td>
+<td>Case intake and processing, MedDRA coding (version upgrades), duplicate detection, expedited reporting timelines, ICH E2B(R3) ICSR XML generation and submission</td>
+<td>E2B XML schema and business-rule validation (§7.3), due-date calculations (§7.5), safety DB ↔ reporting DB checks (§7.4), regression packs for MedDRA upgrades</td>
+</tr>
+<tr>
+<td><strong>Healthcare</strong></td>
+<td>Protection of patient health information (e.g. HIPAA, DPDP Act, PDPL)</td>
+<td>PHI masking in all evidence, synthetic data, access logs</td>
+</tr>
+<tr>
+<td><strong>Insurance</strong></td>
+<td>Regulator and audit expectations on policy and claims systems (e.g. IRDAI, US state regulators)</td>
+<td>Premium/claim calculations with approved rule specs, traceability to product filings</td>
+</tr>
+</tbody>
+</table>
+<h3 id="127-validating-qualiflow-itself">12.7 Validating QualiFlow itself</h3>
+<p>Regulated clients will qualify QualiFlow as a system. The <strong>compliance pack</strong> (enterprise add-on) provides: vendor documentation (system description, requirements, risk assessment, release notes, change control, test evidence for QualiFlow's own releases); vendor-audit and questionnaire support; version pinning and controlled upgrade windows; SOC 2 / ISO 27001 reports.</p>
+<hr />
+<h2 id="13-integrations-exportimport-api">13. Integrations, Export/Import &amp; API</h2>
+<h3 id="131-integrations">13.1 Integrations</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Integrations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source control</td>
+<td>GitHub, GitLab, Bitbucket, Azure Repos (PRs, status checks)</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>GitHub Actions, GitLab CI, Jenkins, Azure DevOps, CircleCI (CLI + API)</td>
+</tr>
+<tr>
+<td>Work tracking</td>
+<td>Jira (Cloud and Data Center), Azure Boards</td>
+</tr>
+<tr>
+<td>Test management</td>
+<td>Xray, Zephyr Scale, TestRail, Azure Test Plans, qTest (bi-directional, §8.2)</td>
+</tr>
+<tr>
+<td>Knowledge</td>
+<td>Confluence, SharePoint, Google Drive, Git-hosted docs</td>
+</tr>
+<tr>
+<td>Communication</td>
+<td>Email, Slack, Microsoft Teams</td>
+</tr>
+<tr>
+<td>Devices &amp; browsers</td>
+<td>BrowserStack, Sauce Labs, AWS Device Farm, local emulators</td>
+</tr>
+<tr>
+<td>Identity</td>
+<td>OIDC, SAML SSO, SCIM provisioning</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td>OpenTelemetry export; webhook events to client tools</td>
+</tr>
+</tbody>
+</table>
+<h3 id="132-export-and-import-standard-and-client-specific-formats">13.2 Export and import (standard and client-specific formats)</h3>
+<p><strong>Built-in formats:</strong> CSV, Excel, JSON, Gherkin (.feature), PDF; direct push to test-management tools.</p>
+<p><strong>Custom org-specific formats (adaptive profiles):</strong></p>
+<ol>
+<li>The client uploads a sample of <strong>their own</strong> CSV/Excel template.</li>
+<li>The agent analyzes columns, order, sheet layout, merged cells, step formatting, ID patterns, priority labels, custom fields, and language — and <strong>proposes a field mapping</strong>.</li>
+<li>An admin reviews and corrects it (dropdowns per column, transformations, defaults).</li>
+<li>Saved as a named, versioned <strong>profile</strong> (e.g. "Acme Bank regression sheet v2").</li>
+<li>Future exports run <strong>deterministically</strong> — no LLM call, instant and consistent.</li>
+</ol>
+<p>The same profile works in reverse for <strong>imports</strong> (§6.1) and as the <strong>field mapping for TMS sync</strong> (§8.2). Every export is audit-logged.</p>
+<h3 id="133-public-api-webhooks-sdk">13.3 Public API, webhooks, SDK</h3>
+<ul>
+<li>REST API (OpenAPI-documented) for everything the UI does; scoped API keys.</li>
+<li><strong>Webhooks</strong> for events (run finished, case approved, heal PR opened, readiness changed).</li>
+<li><strong>CLI and SDKs</strong> (Python, JS/TS) for CI use.</li>
+<li><strong>Plugin SDK</strong> for executors, TMS connectors, and validation-kit extensions — the basis for a later <strong>marketplace</strong> of community and partner plugins.</li>
+</ul>
+<h3 id="134-data-portability-and-exit">13.4 Data portability and exit</h3>
+<p>All cases, history, evidence, and reports exportable in open formats at any time; on contract end, a full export is provided before deletion. Clients already own their code in their own repo.</p>
+<hr />
+<h2 id="14-user-experience-onboarding-accessibility-product-analytics">14. User Experience: Onboarding, Accessibility, Product Analytics</h2>
+<h3 id="141-onboarding-and-time-to-first-value">14.1 Onboarding and time-to-first-value</h3>
+<ul>
+<li><strong>Sample project</strong> (the demo bank) preloaded so new users see value before connecting anything.</li>
+<li><strong>Guided setup wizard:</strong> connect repo → pick tech profile, domain, jurisdiction, language → upload one spec or story → review generated cases → first automated run.</li>
+<li><strong>Target:</strong> first approved cases within one hour; first automated passing test within one day.</li>
+<li>In-app checklists, tooltips, and short videos; documentation site and tutorials ("QualiFlow Academy").</li>
+</ul>
+<h3 id="142-accessibility-of-qualiflow-itself">14.2 Accessibility of QualiFlow itself</h3>
+<p>Target <strong>WCAG 2.2 AA</strong> for the platform UI; publish a <strong>VPAT / Accessibility Conformance Report</strong> (often required in enterprise and government procurement); keyboard-first review queues for power users.</p>
+<h3 id="143-product-analytics-and-feedback">14.3 Product analytics and feedback</h3>
+<p>Privacy-respecting usage analytics (feature adoption, drop-off points, time-to-first-value), with tenant opt-out and no client content collected; in-app feedback and feature voting; <strong>customer health score</strong> for customer success (§24).</p>
+<hr />
+<h1 id="part-c-platform">Part C — Platform</h1>
+<h2 id="15-system-architecture">15. System Architecture</h2>
+<h3 id="151-high-level-view">15.1 High-level view</h3>
+<p>The platform splits into a <strong>control plane</strong> (multi-tenant SaaS: metadata, AI workflows, reporting) and a <strong>data plane</strong> (runners, which can run in QualiFlow's cloud <em>or</em> inside the client's network).</p>
+<div class="diagram"><pre class="mermaid">flowchart TB
+    subgraph Client[&quot;Users &amp; Integrations&quot;]
+        UI[Web App - Next.js&lt;br/&gt;i18n, RTL]
+        CI[CI Pipelines / CLI / API]
+        EXT[Git / Jira / Xray / TestRail&lt;br/&gt;Confluence / Slack / Teams]
+    end
+
+    subgraph CP[&quot;Control Plane (per hosting region)&quot;]
+        GW[API Gateway - FastAPI&lt;br/&gt;AuthN/Z, RBAC, rate limits]
+        ORCH[Agent Service&lt;br/&gt;LangGraph workflows]
+        LLMGW[LLM Gateway - LiteLLM&lt;br/&gt;tiers, BYOK, budgets]
+        SYNC[Sync Service&lt;br/&gt;TMS + Jira, webhooks]
+        SCHED[Job Scheduler&lt;br/&gt;queue + workers]
+        REP[Reporting + Email Service]
+        DB[(PostgreSQL + pgvector&lt;br/&gt;RLS tenant isolation)]
+        OBJ[(Object Storage&lt;br/&gt;evidence, WORM option)]
+        OBS[Observability&lt;br/&gt;OpenTelemetry + Langfuse]
+    end
+
+    subgraph DP[&quot;Data Plane (runners)&quot;]
+        R1[Cloud Runners&lt;br/&gt;K8s ephemeral pods]
+        R2[Self-Hosted Runner Agent&lt;br/&gt;client network]
+        PW[Playwright]
+        AP[Appium + device farm]
+        API[API test engine]
+        VK[Validation Kit&lt;br/&gt;files, DB, rules, inbox]
+    end
+
+    UI --&gt; GW
+    CI --&gt; GW
+    EXT &lt;--&gt; SYNC
+    GW --&gt; ORCH &amp; SCHED &amp; REP
+    ORCH --&gt; LLMGW
+    ORCH --&gt; DB
+    SYNC --&gt; DB
+    REP --&gt; DB
+    SCHED --&gt; R1
+    SCHED -. outbound-only .-&gt; R2
+    R1 --&gt; PW &amp; AP &amp; API &amp; VK
+    R2 --&gt; PW &amp; AP &amp; API &amp; VK
+    R1 --&gt; OBJ
+    R2 --&gt; OBJ
+    ORCH --&gt; OBS
+</pre></div>
+<h3 id="152-technology-stack">15.2 Technology stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Choice</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent orchestration</td>
+<td><strong>LangGraph</strong> (Python)</td>
+<td>Stateful graphs, routing, retries, checkpointing, human-in-the-loop <code>interrupt()</code></td>
+</tr>
+<tr>
+<td>Tool access</td>
+<td><strong>MCP</strong> — Playwright MCP, Appium / custom MCP servers</td>
+<td>Standard agent–tool interface; reusable outside the platform</td>
+</tr>
+<tr>
+<td>LLM gateway</td>
+<td><strong>LiteLLM</strong> (proxy)</td>
+<td>Multi-provider, per-tenant keys (BYOK), budgets, cost tracking, tier aliases</td>
+</tr>
+<tr>
+<td>Backend API</td>
+<td><strong>FastAPI</strong> + Pydantic v2</td>
+<td>Async, typed, OpenAPI out of the box</td>
+</tr>
+<tr>
+<td>Background jobs</td>
+<td><strong>Redis + Celery</strong> (start) → <strong>Temporal</strong> (scale)</td>
+<td>Durable long-running jobs and sync</td>
+</tr>
+<tr>
+<td>Database</td>
+<td><strong>PostgreSQL 16 + pgvector</strong></td>
+<td>Relational + embeddings; row-level security for tenancy</td>
+</tr>
+<tr>
+<td>Search</td>
+<td>Postgres full-text + pgvector (hybrid) + reranker</td>
+<td>Fewer, better chunks → lower cost and latency</td>
+</tr>
+<tr>
+<td>Embeddings</td>
+<td>Multilingual embedding model (per tenant, fixed)</td>
+<td>Cross-language retrieval (§4.5)</td>
+</tr>
+<tr>
+<td>Document parsing</td>
+<td><strong>Docling</strong> or <strong>Unstructured</strong>; openpyxl/pandas</td>
+<td>Structure-aware parsing for RAG and imports</td>
+</tr>
+<tr>
+<td>LangGraph checkpoints</td>
+<td><code>langgraph-checkpoint-postgres</code></td>
+<td>Resume/replay agent runs; audit trail</td>
+</tr>
+<tr>
+<td>Object storage</td>
+<td><strong>S3</strong> (MinIO locally); Object Lock for WORM</td>
+<td>Traces, videos, screenshots, evidence</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td><strong>Next.js + TypeScript + shadcn/ui</strong>, next-intl (i18n)</td>
+<td>Fast to build; RTL and localization from day one</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td><strong>Keycloak</strong> (self-host) or Auth0/Clerk (managed)</td>
+<td>OIDC; SAML SSO and SCIM for enterprise</td>
+</tr>
+<tr>
+<td>Runners</td>
+<td>Docker images on <strong>Kubernetes Jobs</strong></td>
+<td>Ephemeral, isolated, scalable</td>
+</tr>
+<tr>
+<td>Mobile devices</td>
+<td>Emulators → device farms (BrowserStack / Sauce Labs / AWS Device Farm)</td>
+<td>No hardware to own early</td>
+</tr>
+<tr>
+<td>Reports &amp; email</td>
+<td>HTML templates → PDF (e.g. headless Chromium), SES/SendGrid/Postmark</td>
+<td>Localized, branded output</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td><strong>OpenTelemetry</strong>, Grafana/Prometheus, <strong>Langfuse</strong> or LangSmith</td>
+<td>Infra metrics separate from LLM quality metrics</td>
+</tr>
+<tr>
+<td>Infra as code</td>
+<td><strong>Terraform</strong> + Helm</td>
+<td>Same artifacts for SaaS, dedicated, client cloud, and on-prem</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>GitHub Actions</td>
+<td>Builds, tests, evals, deploys</td>
+</tr>
+<tr>
+<td>Billing</td>
+<td>Stripe (and regional payment options as needed)</td>
+<td>Subscriptions + usage metering</td>
+</tr>
+</tbody>
+</table>
+<h3 id="153-model-tiering-and-provider-configuration">15.3 Model tiering and provider configuration</h3>
+<p>Tiering is <strong>automatic by default and overridable by an admin</strong>. Tasks reference a <strong>tier</strong>, never a model name; each tenant maps tiers to models from whichever provider they've bought.</p>
+<p><strong>Tiers (defined by the platform):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Typical tasks</th>
+<th>Needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fast</code></td>
+<td>First-pass failure classification, chunk tagging, linting imported cases, log summaries, duplicate detection</td>
+<td>Low cost, low latency</td>
+</tr>
+<tr>
+<td><code>balanced</code></td>
+<td>Drafting manual cases, export mappings, triage with evidence, report narratives, translation</td>
+<td>Good reasoning at moderate cost</td>
+</tr>
+<tr>
+<td><code>strong</code></td>
+<td>Automation code, complex heals, migration of legacy suites, exploration, style-rule distillation</td>
+<td>Best code + reasoning quality</td>
+</tr>
+<tr>
+<td><code>vision</code></td>
+<td>Screenshots for heal/triage, visual states</td>
+<td>Image input</td>
+</tr>
+<tr>
+<td><code>embedding</code></td>
+<td>RAG indexing and retrieval</td>
+<td>Multilingual; fixed per tenant (changing requires re-indexing)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Provider presets:</strong> when a tenant connects a provider (their OpenAI key, Azure OpenAI deployment, Anthropic, Google, AWS Bedrock, or a self-hosted model), a maintained preset maps tiers automatically — e.g. the provider's small/"mini"-class model for <code>fast</code>, mid-tier for <code>balanced</code>, flagship for <code>strong</code>. Presets are updated as providers release models, and <strong>every preset change is evaluated (§20) before rollout</strong>.</p>
+<p><strong>Runtime safeguards:</strong></p>
+<ul>
+<li><strong>Validate → escalate:</strong> if a <code>fast</code>/<code>balanced</code> output fails schema validation, confidence, or dry run, retry once on the next tier; frequent escalations move the task up permanently.</li>
+<li><strong>Capability checks:</strong> a model is eligible only if it supports what the task needs (structured output, tools, vision, context length, language quality).</li>
+<li><strong>Budget-aware:</strong> near the budget, non-critical tasks (e.g. nightly learning) are deferred; critical paths (heal in CI) are not.</li>
+<li><strong>Fallback provider</strong> if the primary is rate-limited or down.</li>
+</ul>
+<p><strong>Admin overrides (optional):</strong> per task, per project, per language, or pinned model versions for audit stability — versioned and audit-logged. Implemented as LiteLLM aliases (<code>qf-fast</code>, <code>qf-strong</code>, …) resolved per tenant.</p>
+<h3 id="154-deployment-models">15.4 Deployment models</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Who it's for</th>
+<th>What's different</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Multi-tenant SaaS</strong></td>
+<td>Most customers</td>
+<td>Shared control plane per region; tenant isolation via RLS and per-tenant keys</td>
+</tr>
+<tr>
+<td><strong>Dedicated (single-tenant) SaaS</strong></td>
+<td>Large or cautious customers</td>
+<td>Own database, storage, and compute in QualiFlow's cloud; own upgrade window</td>
+</tr>
+<tr>
+<td><strong>Client cloud (BYOC)</strong></td>
+<td>Banks and regulated firms with cloud accounts</td>
+<td>Deployed via Terraform/Helm into the client's AWS/Azure/GCP account; QualiFlow operates it with limited access, or the client does</td>
+</tr>
+<tr>
+<td><strong>On-premise</strong></td>
+<td>Strict data-residency or no-cloud policies</td>
+<td>Helm on the client's Kubernetes; client operates; QualiFlow supports</td>
+</tr>
+<tr>
+<td><strong>Air-gapped</strong></td>
+<td>Defence, some government, some banks</td>
+<td>On-prem with <strong>self-hosted LLMs</strong> (e.g. served via vLLM) and offline updates; expect lower AI quality than frontier hosted models — document the trade-off</td>
+</tr>
+<tr>
+<td><strong>Hybrid (most common enterprise path)</strong></td>
+<td>Teams that accept SaaS but not data leaving</td>
+<td>SaaS control plane + <strong>self-hosted runners</strong> keep execution, DB access, and evidence inside the network</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Design for all of these from day one (stateless services, everything in Helm, no hard-coded cloud services without an abstraction), but <strong>sell only SaaS + self-hosted runners until Phase 4</strong>. Each extra model adds support cost.</p>
+</blockquote>
+<h3 id="155-multi-region-and-data-residency">15.5 Multi-region and data residency</h3>
+<p>Control plane and storage deployable per region (e.g. US, EU, Middle East, India); tenants pinned to a region at creation; no cross-region data movement; LLM provider regions chosen to match where the provider allows. Where in-country hosting is required and no suitable region exists, use self-hosted runners and evidence storage in the client network, or a client-cloud/on-prem deployment.</p>
+<h3 id="156-architecture-decision-records-adrs">15.6 Architecture decision records (ADRs)</h3>
+<ol>
+<li><strong>ADR-001: Generated code is the source of truth</strong>, stored in the client's repo; our DB holds metadata, history, and embeddings.</li>
+<li><strong>ADR-002: No LLM in the hot path of regression execution.</strong> AI activates only on failure, for exploration, or for authoring.</li>
+<li><strong>ADR-003: Runners connect outbound-only</strong>; clients never open inbound ports.</li>
+<li><strong>ADR-004: Tenant isolation at the database layer</strong> (Postgres RLS) plus tenant-scoped storage prefixes and keys.</li>
+<li><strong>ADR-005: Python platform, polyglot generated tests</strong> (Java tests run via Maven in runner images).</li>
+<li><strong>ADR-006: Adapt with retrieval and reviewable rules before fine-tuning.</strong></li>
+<li><strong>ADR-007: LLM maps formats once; exports, imports, and sync run deterministically.</strong></li>
+<li><strong>ADR-008: Tasks reference tiers, not models.</strong></li>
+<li><strong>ADR-009: Technologies and TMS connectors are plugins.</strong></li>
+<li><strong>ADR-010: Validations are deterministic library code; client data never goes to the LLM by default.</strong></li>
+<li><strong>ADR-011: Metrics and selection scores are deterministic; AI only explains, with links to data.</strong></li>
+<li><strong>ADR-012: Evidence is captured by default and tamper-evident.</strong></li>
+<li><strong>ADR-013: One system of record per project for test management</strong>, with field-level ownership in sync.</li>
+<li><strong>ADR-014: Internationalization from day one</strong> (externalized strings, locale-aware formatting, RTL-safe UI).</li>
+<li><strong>ADR-015: Production is blocked by default</strong> for agents and runs; only opt-in read-only monitoring.</li>
+<li><strong>ADR-016: One packaging for all deployment models</strong> (containers + Helm + Terraform).</li>
+</ol>
+<hr />
+<h2 id="16-agent-design-langgraph">16. Agent Design (LangGraph)</h2>
+<h3 id="161-workflows">16.1 Workflows</h3>
+<table>
+<thead>
+<tr>
+<th>Graph</th>
+<th>Trigger</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generate_tests</code></td>
+<td>Story / ticket / spec / URL, or imported manual cases</td>
+<td>Stage 1: cases for QA lead review. Stage 2: PR with scripts for approved cases (§6, §7)</td>
+</tr>
+<tr>
+<td><code>migrate_suite</code></td>
+<td>Legacy automation repo connected</td>
+<td>Intent-extracted cases → regenerated scripts → parity report (§6.1)</td>
+</tr>
+<tr>
+<td><code>heal_test</code></td>
+<td>Locator failures in a run</td>
+<td>One PR per run grouped by root cause, or "needs human" (§9.1)</td>
+</tr>
+<tr>
+<td><code>triage_failure</code></td>
+<td>Failed test after retries</td>
+<td>Verdict + evidence + de-duplicated defect draft (§9.2)</td>
+</tr>
+<tr>
+<td><code>select_regression</code></td>
+<td>Release, pipeline, or manual</td>
+<td>Recommended suite with scores, explanations, residual risk (§10)</td>
+</tr>
+<tr>
+<td><code>escape_analysis</code></td>
+<td>Production defect logged</td>
+<td>Catchability, skip analysis, weight tuning, proposed case (§10.5)</td>
+</tr>
+<tr>
+<td><code>ingest_knowledge</code></td>
+<td>Upload, connector sync, webhook</td>
+<td>Delta-updated knowledge base + impact report (§5)</td>
+</tr>
+<tr>
+<td><code>learn_style</code></td>
+<td>Nightly per project/feature/language</td>
+<td>Proposed style rules for approval (§6.3)</td>
+</tr>
+<tr>
+<td><code>map_format</code></td>
+<td>Sample template uploaded</td>
+<td>Proposed field mapping for admin review (§13.2)</td>
+</tr>
+<tr>
+<td><code>translate_cases</code></td>
+<td>Language added or requested</td>
+<td>Translated cases for review, glossary preserved (§4.5)</td>
+</tr>
+<tr>
+<td><code>summarize_report</code></td>
+<td>Scheduled per role or on demand</td>
+<td>Narrative with every figure linked to data (§11)</td>
+</tr>
+<tr>
+<td><code>explore_app</code></td>
+<td>Manual or scheduled</td>
+<td>Findings report + suggested cases (later phase)</td>
+</tr>
+</tbody>
+</table>
+<p>Sync with Jira/TMS (§8.2) is deliberately <strong>not</strong> an agent: it's deterministic service code.</p>
+<h3 id="162-generate_tests-graph">16.2 <code>generate_tests</code> graph</h3>
+<div class="diagram"><pre class="mermaid">flowchart LR
+    A[ingest_source] --&gt; RC[retrieve_context&lt;br/&gt;feature pack + RAG chunks&lt;br/&gt;+ style guide + similar approved cases]
+    RC --&gt; M{mode}
+    M --&gt;|new| B[draft_manual_cases]
+    M --&gt;|convert| B2[import_and_lint_cases]
+    B &amp; B2 --&gt; R[QA lead case review - interrupt]
+    R --&gt;|reject| X[archive with reason]
+    R --&gt;|edit| R
+    X &amp; R -.-&gt;|review signals| L[(learning store)]
+    R --&gt;|approve - manual only| Y[store + sync to TMS]
+    R --&gt;|approve - automate| C{route_by_target&lt;br/&gt;enabled executors only}
+    C --&gt;|web| D[ui_automation_agent]
+    C --&gt;|mobile| E[mobile_automation_agent]
+    C --&gt;|api| F[api_automation_agent]
+    D &amp; E &amp; F --&gt; G[write_code&lt;br/&gt;uses validation kit]
+    G --&gt; H[dry_run_in_sandbox]
+    H --&gt;|fails| I[self_correct]
+    I --&gt; H
+    H --&gt;|passes or max retries| J[SDET code review - interrupt]
+    J --&gt;|approved| K[open_pull_request + sync to TMS]
+    J --&gt;|changes requested| G
+</pre></div>
+<p><strong>State schema (simplified):</strong></p>
+<pre><code class="language-python">class GenerateState(TypedDict):
+    tenant_id: str
+    project_id: str
+    feature_id: str                   # e.g. Banking → Payments → UPI
+    language: str                     # e.g. &quot;en&quot;, &quot;ar&quot;, or bilingual &quot;en+ar&quot;
+    mode: Literal[&quot;new&quot;, &quot;convert&quot;]
+    context: RetrievedContext         # feature pack, RAG chunks (with versions), style rules, few-shot cases
+    source: SourceDoc                 # story, spec, URL, or manual case(s)
+    target: Literal[&quot;web&quot;, &quot;mobile&quot;, &quot;api&quot;]
+    cases: list[ManualTestCase]       # each with status, reviewer, validation types
+    approved_case_ids: list[str]      # automation candidates only
+    files: dict[str, str]             # path -&gt; code
+    dry_run_results: list[RunResult]
+    attempts: int
+    review_decision: Literal[&quot;approved&quot;, &quot;changes&quot;, None]
+    cost_usd: float
+</code></pre>
+<h3 id="163-agent-design-rules">16.3 Agent design rules</h3>
+<ul>
+<li><strong>Structured outputs everywhere</strong> — every node returns a Pydantic model.</li>
+<li><strong>Context trimming</strong> — DOM and page source reduced to interactive elements + accessibility tree.</li>
+<li><strong>Bounded loops</strong> — max attempts and per-run cost caps.</li>
+<li><strong>Tiers, not models</strong> (§15.3).</li>
+<li><strong>Feature-scoped retrieval</strong> with citations recorded for traceability.</li>
+<li><strong>Tool allow-lists per node</strong>; app content treated as untrusted (§18).</li>
+<li><strong>Human-in-the-loop</strong> at every gate; auto-merge only as an opt-in.</li>
+</ul>
+<hr />
+<h2 id="17-data-model-core-entities">17. Data Model (core entities)</h2>
+<pre><code>Organization ─┬─ User (roles, language, time zone)
+              ├─ HostingRegion (pinned)
+              ├─ DomainPack · JurisdictionPack (versioned)
+              ├─ ModelPolicy (provider, tier → model map, overrides, budgets, fallback)
+              ├─ Project ─┬─ TechProfile (types, frameworks, languages, conventions, PR strategy, TMS)
+              │           ├─ Environment (URLs, versions, classification, action policies)
+              │           ├─ DataSource (DB / inbox / mock; secret ref; read-only)
+              │           ├─ Feature (tree; glossary, rules, criticality)
+              │           ├─ KnowledgeDoc ── DocVersion (hash, language) ── Chunk (hash, embedding, feature_id)
+              │           ├─ StyleRule (text, source, status, feature_id, language)
+              │           ├─ BusinessRule (formula spec, rounding, tolerance, test vectors, approver)
+              │           ├─ FixtureFile · TestDataSet (versioned)
+              │           ├─ TestCase (feature, status, versions, language(s), applicability, external_ids, cited_chunks)
+              │           │     ├─ CaseReview (action, diff, comment, who, when)
+              │           │     ├─ AutomatedScript ── ScriptVersion (git sha)
+              │           │     └─ LegacySource (migrated file, parity status)
+              │           ├─ TraceLink (requirement ↔ case ↔ script ↔ code area / API / screen / table)
+              │           ├─ Release (scope, build, readiness, sign-off, baseline)
+              │           │     └─ TestSelection (suite type, scores, residual risk, approver)
+              │           ├─ Run (automated | manual) ── TestResult ── StepResult ── Artifact (sha256)
+              │           │     └─ EvidencePackage (manifest, hash, ledger entry, retention, legal hold)
+              │           ├─ SyncLink (entity ↔ external system ID, field ownership, last sync)
+              │           ├─ HealGroup (root cause, tests, confidence) ── HealPR
+              │           ├─ TriageVerdict · Defect (external ID, escaped flag) · FlakyRecord
+              │           └─ Integration (Git, Jira, TMS, Slack, Teams, Confluence)
+              ├─ Signature (signer, meaning, record + version, time, re-auth)
+              ├─ AiProvenance (artifact, model, tier, prompt version, sources, approver)
+              ├─ ReportSubscription (role, report, schedule/event, channel, recipients, format, secure link)
+              ├─ EmailLog · ExportProfile · ExportJob
+              ├─ Runner (cloud | self-hosted, labels, heartbeat)
+              ├─ ApiKey · LlmProviderKey (encrypted, BYOK) · Webhook
+              ├─ UsageRecord (runs, minutes, tokens, cost)
+              └─ AuditLog (hash-chained, append-only)
+</code></pre>
+<p>Every table carries <code>org_id</code>, protected by row-level security.</p>
+<hr />
+<h2 id="18-security-privacy">18. Security &amp; Privacy</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Measures</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tenant isolation</td>
+<td>Postgres RLS, per-tenant storage prefixes, tenant-scoped encryption keys; dedicated deployments for the strictest clients</td>
+</tr>
+<tr>
+<td>Runner sandboxing</td>
+<td>Ephemeral containers, no shared state, egress policies, non-root, resource limits</td>
+</tr>
+<tr>
+<td>Secrets</td>
+<td>Vault / cloud secrets manager; injected at runtime; never sent to LLMs; redacted from logs and traces</td>
+</tr>
+<tr>
+<td>Client data in validations</td>
+<td>Read-only DB credentials resolved only on the runner; LLM sees schemas only; masked reports; self-hosted runners keep data in-network</td>
+</tr>
+<tr>
+<td><strong>Prompt injection</strong></td>
+<td>App content is untrusted; tool allow-lists per node; no credentials in LLM context; output validation; exploration restricted to configured domains</td>
+</tr>
+<tr>
+<td>Production safety</td>
+<td>§8.5 guardrails; production blocked by default</td>
+</tr>
+<tr>
+<td>LLM data handling</td>
+<td>BYOK; zero-retention settings where available; PII masking before LLM calls; provider region matching</td>
+</tr>
+<tr>
+<td>AuthN/Z</td>
+<td>OIDC, SAML SSO, SCIM, RBAC, scoped API keys, MFA</td>
+</tr>
+<tr>
+<td>Encryption</td>
+<td>TLS in transit; encryption at rest; customer-managed keys (enterprise)</td>
+</tr>
+<tr>
+<td>Auditability</td>
+<td>Hash-chained audit log; LangGraph checkpoints replay every AI decision</td>
+</tr>
+<tr>
+<td>Secure development</td>
+<td>Dependency and container scanning, SAST, secret scanning in CI; annual penetration test; responsible-disclosure policy</td>
+</tr>
+<tr>
+<td>Privacy</td>
+<td>Data processing agreement, sub-processor list, data subject request handling, retention and deletion (§23)</td>
+</tr>
+<tr>
+<td>Certifications path</td>
+<td>SOC 2 Type I → Type II and/or ISO 27001; ISO 42001 later (§12.4)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="19-reliability-operations">19. Reliability &amp; Operations</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Target / approach (initial targets — adjust per plan and contract)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Availability (SLO)</td>
+<td>Team: 99.5% · Business: 99.9% · Enterprise: per contract</td>
+</tr>
+<tr>
+<td>Data loss tolerance (RPO)</td>
+<td>≤ 15 minutes (point-in-time database recovery)</td>
+</tr>
+<tr>
+<td>Recovery time (RTO)</td>
+<td>≤ 4 hours for a regional outage of the control plane</td>
+</tr>
+<tr>
+<td>Backups</td>
+<td>Automated, encrypted, cross-zone; restore tested quarterly</td>
+</tr>
+<tr>
+<td>High availability</td>
+<td>Multi-AZ database and services; runners are stateless and retryable</td>
+</tr>
+<tr>
+<td>Incident response</td>
+<td>Severity levels, runbooks, status page, customer notification, post-incident reviews</td>
+</tr>
+<tr>
+<td>On-call</td>
+<td>Solo phase: managed services + alerting to phone; add rotation as the team grows</td>
+</tr>
+<tr>
+<td>Capacity &amp; cost</td>
+<td>Autoscaling runners; per-tenant quotas; cost dashboards per tenant</td>
+</tr>
+<tr>
+<td>Upgrades</td>
+<td>Zero-downtime deploys for SaaS; versioned releases and upgrade windows for dedicated/on-prem</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Use <strong>managed services</strong> (managed Postgres, managed Kubernetes or even a simpler container platform early) until revenue supports an operations hire. Reliability problems hurt a young product more than missing features.</p>
+</blockquote>
+<hr />
+<h2 id="20-quality-evals-metrics">20. Quality: Evals &amp; Metrics</h2>
+<p>Evals separate a demo from a product. Run them in CI on every change to prompts, models, presets, or graphs.</p>
+<h3 id="201-eval-suites">20.1 Eval suites</h3>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Dataset</th>
+<th>Metrics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Case generation</td>
+<td>30–50 stories/specs with reference cases, per language</td>
+<td>Coverage vs. reference, LLM-judge quality, first-pass approval proxy</td>
+</tr>
+<tr>
+<td>Script generation</td>
+<td>Approved cases with reference scripts</td>
+<td>Compiles %, passes first run %, uses validation kit correctly</td>
+</tr>
+<tr>
+<td>Migration</td>
+<td>Legacy Selenium tests with known behaviour</td>
+<td>Intent accuracy, parity %, runtime improvement</td>
+</tr>
+<tr>
+<td>Healing</td>
+<td>Seeded UI changes incl. one shared page-object break</td>
+<td>Heal success %, false-heal rate, grouping accuracy, PRs per run, cost</td>
+</tr>
+<tr>
+<td>Triage</td>
+<td>Labeled historical failures</td>
+<td>Accuracy, precision per class, duplicate-defect detection</td>
+</tr>
+<tr>
+<td>Retrieval</td>
+<td>Questions with known answer chunks, multilingual</td>
+<td>Recall@k, precision after rerank, tokens per request</td>
+</tr>
+<tr>
+<td>Adaptation</td>
+<td>Replay a project's review history</td>
+<td>First-pass approval before vs. after learning; edit distance</td>
+</tr>
+<tr>
+<td>Format mapping</td>
+<td>Client templates with known mappings</td>
+<td>Field-mapping accuracy, round-trip fidelity</td>
+</tr>
+<tr>
+<td>Translation</td>
+<td>Cases with reference translations and glossaries</td>
+<td>Glossary preservation, reviewer acceptance</td>
+</tr>
+<tr>
+<td>Validation generation</td>
+<td>Requirements needing file/DB/calc checks</td>
+<td>Correct validation type %, SQL correctness, rule-spec accuracy</td>
+</tr>
+<tr>
+<td>Regression selection</td>
+<td>Replayed releases with known failures</td>
+<td>Regression recall, suite-size reduction, time saved</td>
+</tr>
+<tr>
+<td>Report narratives</td>
+<td>Summaries vs. source data</td>
+<td>100% of figures traceable; no unsupported claims</td>
+</tr>
+<tr>
+<td>Model presets</td>
+<td>All suites per provider preset</td>
+<td>Quality vs. cost per tier; escalation rate</td>
+</tr>
+<tr>
+<td>Safety</td>
+<td>Pages with injected instructions; destructive-action traps</td>
+<td>Stayed within allowed tools/domains/actions %</td>
+</tr>
+</tbody>
+</table>
+<h3 id="202-product-business-operations-kpis">20.2 Product, business &amp; operations KPIs</h3>
+<ul>
+<li>Time-to-first-value; weekly active projects; feature adoption</li>
+<li>First-pass approval, edit, and rejection rates per project/feature/language</li>
+<li>Automation coverage per feature; manual execution progress; story → automated test cycle time</li>
+<li>Heal PR acceptance; tests healed per PR; flakiness index</li>
+<li>Defect leakage per release; regression time saved; regression recall</li>
+<li>Time to produce audit evidence for a release (target: minutes)</li>
+<li>LLM cost per case / script / heal / report; LLM cost as % of revenue; cache hit rate; tier escalation rate</li>
+<li>Runner utilization, queue wait, run duration p95; SLO attainment</li>
+<li>Sync errors and conflicts per 1,000 operations</li>
+</ul>
+<hr />
+<h2 id="21-repository-structure">21. Repository Structure</h2>
+<pre><code>qualiflow/
+├── apps/
+│   ├── api/                 # FastAPI control-plane API
+│   ├── agents/              # LangGraph graphs, nodes, prompts, tools
+│   ├── knowledge/           # ingestion, chunking, delta hashing, retrieval
+│   ├── sync/                # Jira / Xray / Zephyr / TestRail / Azure Test Plans connectors
+│   ├── reporting/           # metrics, report templates, email, PDF rendering
+│   ├── worker/              # job workers (Celery → Temporal)
+│   ├── runner/              # runner agent + images (playwright, appium, maven)
+│   └── web/                 # Next.js dashboard (i18n, RTL)
+├── packages/
+│   ├── schemas/             # shared Pydantic models / generated TS types
+│   ├── executors/           # web-playwright, mobile-appium, api-restassured, api-pytest
+│   ├── validation-kit/      # Python / Java / TS: files, DB compare, rules, inbox, mocks
+│   ├── mcp-servers/         # appium, api-spec, test-repo, db-schema
+│   ├── model-presets/       # provider tier → model maps, versioned
+│   ├── exporters/           # CSV/Excel/Gherkin writers, profiles
+│   ├── i18n/                # translations, locale formatting, glossary tools
+│   └── sdk/                 # Python + JS SDKs, CLI, plugin SDK
+├── packs/
+│   ├── domain/              # banking, pharmacovigilance, insurance, e-commerce
+│   └── jurisdiction/        # india, usa, saudi-arabia, uae, eu, uk, singapore
+├── evals/
+│   ├── datasets/
+│   └── suites/
+├── demo-apps/               # demo bank: web, mobile, API, sample BRD (EN + AR)
+├── infra/
+│   ├── terraform/
+│   ├── helm/
+│   └── docker-compose.yml
+├── docs/
+│   ├── adr/
+│   ├── architecture.md
+│   └── runbooks/
+└── .github/workflows/
+</code></pre>
+<hr />
+<h1 id="part-d-business">Part D — Business</h1>
+<h2 id="22-business-model">22. Business Model</h2>
+<h3 id="221-open-core-split-portfolio-and-product-without-conflict">22.1 Open-core split: portfolio and product without conflict</h3>
+<p>The public repo proves your skills and drives adoption; the commercial platform earns revenue.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Open source (e.g. Apache-2.0)</th>
+<th>Commercial</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Validation kit (files, DB compare, rules, inbox, mocks)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>MCP servers (Appium, API spec, DB schema, test repo)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>Executor plugins (Playwright, Appium, RestAssured, pytest)</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>Core agent graphs (single-user generate, heal, triage) + CLI</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>Basic evals and the demo bank app</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>CSV/Excel export</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>Multi-tenant control plane, dashboards, review queues</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Adaptive learning, knowledge base with delta sync and impact analysis</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>TMS/Jira bi-directional sync, native manual runner</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Release intelligence, role-based reports, email, client portal</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Migration of legacy suites (parity tooling)</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Compliance pack, evidence WORM/signatures, AI provenance</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Domain and jurisdiction packs (a sample banking pack can be open)</td>
+<td></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>SSO/SCIM, dedicated/BYOC/on-prem deployment, white-labelling</td>
+<td></td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Open-source the <strong>validation kit and MCP servers first</strong>. They're useful on their own, attract SDETs to your GitHub, and give nothing away that competes with the platform. Licensing has legal consequences — get advice before publishing.</p>
+</blockquote>
+<h3 id="222-pricing-hypothesis-validate-with-design-partners">22.2 Pricing hypothesis (validate with design partners)</h3>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>For</th>
+<th>Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Free / OSS</td>
+<td>Individuals</td>
+<td>Self-host the open components, BYO LLM key</td>
+</tr>
+<tr>
+<td>Team</td>
+<td>Small QA teams</td>
+<td>Per-seat + included run minutes + AI credits</td>
+</tr>
+<tr>
+<td>Business</td>
+<td>Growing orgs</td>
+<td>Higher limits, TMS sync, release intelligence, role reports</td>
+</tr>
+<tr>
+<td>Enterprise</td>
+<td>Regulated orgs</td>
+<td>Annual contract, SSO/SCIM, self-hosted runners, dedicated/BYOC options, SLA</td>
+</tr>
+<tr>
+<td><strong>Add-ons</strong></td>
+<td>Any paid tier</td>
+<td>Compliance pack, extra domain/jurisdiction packs, white-label portal, device-farm capacity, extra languages</td>
+</tr>
+<tr>
+<td><strong>Services</strong></td>
+<td>Any</td>
+<td>Suite migration, onboarding, custom packs, managed testing</td>
+</tr>
+</tbody>
+</table>
+<p>Regional price lists (INR, USD, SAR/AED) reflect purchasing power and local competitors. BYO LLM key plans should be cheaper, since you don't carry the token cost.</p>
+<h3 id="223-unit-economics">22.3 Unit economics</h3>
+<p>Price only after measuring costs. For each AI action, measure in Phase 1 (via Langfuse) and model:</p>
+<pre><code>cost per action = (input tokens × input price + output tokens × output price)
+                  × (1 + escalation rate) × (1 − cache savings)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Tier</th>
+<th>Token budget to measure (starting assumption)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Draft one manual case</td>
+<td>balanced</td>
+<td>~4k input / ~0.8k output</td>
+</tr>
+<tr>
+<td>Generate one script</td>
+<td>strong</td>
+<td>~12k input / ~2.5k output</td>
+</tr>
+<tr>
+<td>Heal one root-cause group</td>
+<td>strong + vision</td>
+<td>~15k input / ~1.5k output</td>
+</tr>
+<tr>
+<td>Triage one failure</td>
+<td>fast → balanced</td>
+<td>~3k input / ~0.3k output</td>
+</tr>
+<tr>
+<td>One report narrative</td>
+<td>balanced</td>
+<td>~5k input / ~0.6k output</td>
+</tr>
+</tbody>
+</table>
+<p>Add non-AI costs: runner minutes, <strong>device-farm minutes (often the largest cost for mobile)</strong>, storage for evidence and video, email, support time.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Target <strong>gross margin ≥ 70%</strong> (a common SaaS benchmark): keep LLM + runner + device costs within roughly 20–25% of revenue per customer. Pass device-farm costs through or cap them by plan, and default regulated customers to BYO LLM key.</p>
+</blockquote>
+<hr />
+<h2 id="23-legal-commercial">23. Legal &amp; Commercial</h2>
+<p><em>Not legal advice — engage a lawyer for each item, ideally one familiar with SaaS in India and your target export markets.</em></p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>What's needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Company &amp; IP</td>
+<td>Company incorporation; IP assignment from any contractors or co-founders; trademark for the product name</td>
+</tr>
+<tr>
+<td>Customer contracts</td>
+<td>Master Subscription Agreement / Terms of Service, order forms, SLA, acceptable use policy</td>
+</tr>
+<tr>
+<td>Privacy</td>
+<td>Privacy policy; <strong>Data Processing Agreement (DPA)</strong>; published <strong>sub-processor list</strong> (cloud, email, and <strong>LLM providers</strong> are sub-processors); cross-border transfer terms where required</td>
+</tr>
+<tr>
+<td>AI terms</td>
+<td>Customer owns inputs and <strong>all generated outputs</strong> (cases, code, reports); no training on customer data without explicit consent; disclosure of AI use and human oversight</td>
+</tr>
+<tr>
+<td>Enterprise asks</td>
+<td>Source-code <strong>escrow</strong> (common for banks), security questionnaires, right-to-audit clauses, data-return-and-deletion on exit</td>
+</tr>
+<tr>
+<td>Insurance</td>
+<td>Cyber liability and professional indemnity (E&amp;O) insurance before signing enterprise contracts</td>
+</tr>
+<tr>
+<td>Open-source compliance</td>
+<td>License scan of all dependencies; avoid licenses incompatible with your commercial distribution; clear license for your open components</td>
+</tr>
+<tr>
+<td>Marketplace terms</td>
+<td>Atlassian Marketplace (if you ship a Jira app), cloud marketplaces later</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="24-go-to-market-customer-success">24. Go-to-Market &amp; Customer Success</h2>
+<h3 id="241-customer-discovery-before-building-past-the-mvp">24.1 Customer discovery (before building past the MVP)</h3>
+<p>Run <strong>15–20 interviews</strong> with QA leads, QA managers, and delivery heads (including 3–5 in BFSI and 2–3 in the Gulf). Learn: current tools and TMS, manual vs. automated split, biggest time sinks, how they evidence releases today, what they'd pay for, and who signs the purchase.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Treat the answers as the input to §25's priorities. Expect a few "Must" items to move to "Later" — that's the point.</p>
+</blockquote>
+<h3 id="242-channels">24.2 Channels</h3>
+<ol>
+<li><strong>Build in public</strong> — weekly LinkedIn/X posts and short demo videos (healing, Jira sync, EMI checked across UI + DB + PDF).</li>
+<li><strong>Open-source funnel</strong> — validation kit and MCP servers on GitHub.</li>
+<li><strong>Services-led start</strong> — offer test-automation consulting using the platform; revenue funds development and feeds real requirements.</li>
+<li><strong>IT services partners</strong> — firms in India delivering to Gulf and US clients; white-labelled portal makes them resellers.</li>
+<li><strong>Marketplaces</strong> — Atlassian Marketplace listing for the Jira/Xray integration; later cloud marketplaces.</li>
+<li><strong>Design partners</strong> — 3–5 at MVP, free or discounted in exchange for feedback and a case study.</li>
+</ol>
+<h3 id="243-customer-success-and-support">24.3 Customer success and support</h3>
+<ul>
+<li>Onboarding playbook and time-to-first-value tracking (§14.1).</li>
+<li><strong>Customer health score</strong> (usage, approval rates, run volume, open issues) to spot churn risk.</li>
+<li>Quarterly business reviews for paid customers, built from the ROI report.</li>
+<li>Support tiers: community (OSS), email business hours (Team/Business), SLA-backed with named contact (Enterprise).</li>
+<li>Public documentation, changelog, roadmap, and status page.</li>
+</ul>
+<hr />
+<h1 id="part-e-delivery">Part E — Delivery</h1>
+<h2 id="25-scope-prioritization">25. Scope Prioritization</h2>
+<p>Everything in this plan is in scope over 24 months. This table decides <strong>when</strong>. <em>Must</em> = needed for the MVP; later releases add the rest.</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>MVP (R1)</th>
+<th>v1.0 (R2)</th>
+<th>v1.5 (R3)</th>
+<th>v2.0 (R4)</th>
+<th>v2.5 (R5)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Org/projects/RBAC, tech profile</td>
+<td>● basic</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Feature hierarchy, domain pack</td>
+<td>● manual setup</td>
+<td>● Banking pack</td>
+<td>●</td>
+<td>● PV pack</td>
+<td>● more packs</td>
+</tr>
+<tr>
+<td>Jurisdiction packs</td>
+<td></td>
+<td></td>
+<td>● India, USA</td>
+<td>● Saudi, UAE, EU</td>
+<td>● UK, Singapore</td>
+</tr>
+<tr>
+<td>Multilingual</td>
+<td>i18n-ready UI (EN)</td>
+<td></td>
+<td>● Arabic UI + cases</td>
+<td>● more languages, translation</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Knowledge base + delta ingestion</td>
+<td>● upload</td>
+<td>● Confluence/Jira sync, impact</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Case generation + QA lead review</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Convert manual suites</td>
+<td>● CSV/Excel</td>
+<td>● TMS import</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Migrate legacy automation</td>
+<td></td>
+<td></td>
+<td>● Selenium Java</td>
+<td>● more frameworks</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Adaptive learning</td>
+<td></td>
+<td>● few-shot + style rules</td>
+<td>●</td>
+<td>●</td>
+<td>● fine-tuning option</td>
+</tr>
+<tr>
+<td>Versioning, collaboration</td>
+<td>● basic</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>API automation</td>
+<td>●</td>
+<td>●</td>
+<td>● RestAssured</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Web automation (Playwright)</td>
+<td></td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Mobile automation (Appium)</td>
+<td></td>
+<td></td>
+<td>●</td>
+<td>● iOS + farm</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Validation kit</td>
+<td>● DB compare</td>
+<td>● files, calc rules</td>
+<td>● inbox, mocks</td>
+<td>●</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Manual execution + TMS sync</td>
+<td>export only</td>
+<td>● Xray, TestRail sync</td>
+<td>● native runner, Zephyr, Azure</td>
+<td>●</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Healing (PR strategy)</td>
+<td></td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Triage + defect de-dup</td>
+<td>● basic</td>
+<td>●</td>
+<td>●</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Flaky mgmt, suite hygiene</td>
+<td></td>
+<td>● flaky</td>
+<td>● hygiene, gaps</td>
+<td>●</td>
+<td></td>
+</tr>
+<tr>
+<td>Environments, test data, safety guardrails</td>
+<td>● guardrails</td>
+<td>● pre-flight</td>
+<td>● test data mgmt</td>
+<td>●</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Release intelligence</td>
+<td></td>
+<td></td>
+<td>●</td>
+<td>● escape analysis</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Reports (roles)</td>
+<td>● QA, QA lead</td>
+<td>● manager, email</td>
+<td>● exec, client, portal</td>
+<td>● auditor</td>
+<td>● ask-your-data</td>
+</tr>
+<tr>
+<td>Audit evidence</td>
+<td>● hashes + manifest</td>
+<td>●</td>
+<td>●</td>
+<td>● WORM, e-signatures, compliance pack</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Export/import profiles, API, webhooks</td>
+<td>● CSV/Excel</td>
+<td>● custom profiles</td>
+<td>● API + webhooks</td>
+<td>● plugin SDK</td>
+<td>● marketplace</td>
+</tr>
+<tr>
+<td>Model tiering &amp; presets</td>
+<td>● OpenAI</td>
+<td>● +1 provider</td>
+<td>● overrides</td>
+<td>● self-hosted models</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Deployment models</td>
+<td>SaaS</td>
+<td>SaaS + self-hosted runner</td>
+<td></td>
+<td>● dedicated, BYOC</td>
+<td>● on-prem, air-gapped</td>
+</tr>
+<tr>
+<td>Multi-region</td>
+<td>1 region</td>
+<td></td>
+<td></td>
+<td>● 2–3 regions</td>
+<td>●</td>
+</tr>
+<tr>
+<td>Billing, plans</td>
+<td></td>
+<td>●</td>
+<td>●</td>
+<td>● regional pricing</td>
+<td></td>
+</tr>
+<tr>
+<td>SSO/SCIM</td>
+<td></td>
+<td></td>
+<td>● SSO</td>
+<td>● SCIM</td>
+<td></td>
+</tr>
+<tr>
+<td>Certifications</td>
+<td></td>
+<td></td>
+<td>● SOC 2 Type I prep</td>
+<td>● SOC 2 Type I / ISO 27001</td>
+<td>● Type II, ISO 42001 prep</td>
+</tr>
+<tr>
+<td>Explorer agent, non-functional testing</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>●</td>
+</tr>
+<tr>
+<td>Accessibility (VPAT), product analytics</td>
+<td>● analytics</td>
+<td></td>
+<td>● WCAG work</td>
+<td>● VPAT</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="26-phased-development-plan-24-months">26. Phased Development Plan (24 months)</h2>
+<p><strong>Assumptions:</strong> solo at ~20 hours/week through Phase 1, then adding help as revenue or funding allows (§27). Without additional people, expect the later phases to take longer — the order stays the same.</p>
+<div class="diagram"><pre class="mermaid">gantt
+    title QualiFlow 24-month plan
+    dateFormat  YYYY-MM
+    axisFormat  %b %Y
+    section Foundation
+    Phase 0 Discovery &amp; foundation        :p0, 2026-11, 42d
+    section Releases
+    Phase 1 MVP (R1 private alpha)        :p1, after p0, 98d
+    Phase 2 v1.0 (R2 public launch)       :p2, after p1, 119d
+    Phase 3 v1.5 (R3 general availability):p3, after p2, 119d
+    Phase 4 v2.0 (R4 enterprise &amp; regulated):p4, after p3, 154d
+    Phase 5 v2.5 (R5 scale &amp; ecosystem)   :p5, after p4, 182d
+</pre></div>
+<h3 id="phase-0-discovery-foundation-months-015">Phase 0 — Discovery &amp; Foundation (Months 0–1.5)</h3>
+<p><strong>Goal:</strong> confirm demand and set up a foundation that won't need rework.</p>
+<ul>
+<li>15–20 customer discovery interviews (§24.1); pick 3–5 design-partner candidates.</li>
+<li>Monorepo, docker-compose stack (Postgres + pgvector, Redis, MinIO, Langfuse), CI with lint/test/eval stages.</li>
+<li>FastAPI skeleton: auth, org/project/feature models with RLS; i18n scaffolding in the UI; environment classification and production block.</li>
+<li>Demo bank app (web + API + OpenAPI spec + sample BRD in English and Arabic).</li>
+<li>ADR-001 to ADR-016 written; legal basics started (company, IP, trademark search).</li>
+<li><strong>Exit:</strong> <code>docker compose up</code> gives a working authenticated API; interview summary with ranked pains.</li>
+</ul>
+<h3 id="phase-1-mvp-requirements-reviewed-cases-api-automation-months-155-r1-private-alpha">Phase 1 — MVP: requirements → reviewed cases → API automation (Months 1.5–5) → <strong>R1 private alpha</strong></h3>
+<p><strong>Goal:</strong> prove the core loop with real users.</p>
+<ul>
+<li>Knowledge base: upload, parse, chunk, embed with delta hashing; hybrid retrieval + reranker.</li>
+<li><code>generate_tests</code> for stories and OpenAPI specs → manual cases → <strong>QA lead review queue</strong> (approve/edit/reject/manual-only) → API scripts (pytest + httpx / Playwright request) → PR.</li>
+<li>Convert manual suites from CSV/Excel; export approved cases to CSV/Excel.</li>
+<li>Validation kit v0: read-only DB connector + UI/API ↔ DB field compare.</li>
+<li>Runner image; runs, results, basic triage; evidence capture (hashes + manifest) from the first run.</li>
+<li>Model tiers with OpenAI preset + escalation; cost tracking per action (feeds §22.3).</li>
+<li>Reports v0: QA engineer and QA lead views; product analytics.</li>
+<li>Open-source the validation kit and MCP servers.</li>
+<li><strong>Release R1:</strong> 2–3 design partners using it on a real project. <strong>Exit:</strong> ≥ 60% first-pass approval of generated cases on partner projects; measured cost per case; first public demo video.</li>
+</ul>
+<h3 id="phase-2-v10-web-automation-maintenance-and-tms-sync-months-59-r2-public-launch">Phase 2 — v1.0: web automation, maintenance, and TMS sync (Months 5–9) → <strong>R2 public launch</strong></h3>
+<p><strong>Goal:</strong> a product teams can adopt for daily work and pay for.</p>
+<ul>
+<li>Playwright via MCP; generation from stories + live URL; page objects.</li>
+<li><code>heal_test</code> with root-cause grouping and PR strategies; flaky detection and quarantine.</li>
+<li><strong>Bi-directional sync with Jira + Xray and TestRail</strong> (system of record, field ownership, external IDs, defect de-dup).</li>
+<li>Validation kit v1: file upload/download, PDF/Excel/CSV/XML checks, fixtures, business-rule specs + calculated fields, DB ↔ DB engine.</li>
+<li>Adaptive learning v1 (few-shot + approvable style rules).</li>
+<li>Knowledge connectors (Confluence, Jira) with delta sync and impact analysis.</li>
+<li>Custom export/import profiles; environment pre-flight checks.</li>
+<li>Reports: manager view, <strong>email delivery</strong>, release report.</li>
+<li>Banking domain pack; second LLM provider preset; self-hosted runner (beta).</li>
+<li>Billing (Stripe) with Team and Business plans; docs site; onboarding wizard.</li>
+<li><strong>Release R2:</strong> public launch. <strong>Exit:</strong> first 3–5 paying customers; heal PR acceptance ≥ 70% on partner suites.</li>
+</ul>
+<h3 id="phase-3-v15-mobile-release-intelligence-migration-arabic-months-913-r3-general-availability">Phase 3 — v1.5: mobile, release intelligence, migration, Arabic (Months 9–13) → <strong>R3 general availability</strong></h3>
+<p><strong>Goal:</strong> complete the multi-technology story and support bigger teams.</p>
+<ul>
+<li>Appium (Android first) with mobile scenarios; RestAssured/Java generation; device-farm integration.</li>
+<li><strong>Migration of Selenium Java suites</strong> with parity runs and cutover report.</li>
+<li><strong>Release intelligence v1:</strong> traceability graph, scoring, suite types, time-budget mode, residual risk, approval; release readiness score; quality gates.</li>
+<li>Native manual runner (with evidence capture extension); Zephyr Scale and Azure Test Plans sync.</li>
+<li>Test data management; validation kit v2 (test inbox, OTP, mocks, async/queue checks, RBAC matrix).</li>
+<li>Reports: executive one-pager, client-branded reports, white-labelled client portal; public API + webhooks.</li>
+<li><strong>Arabic UI and Arabic/bilingual case generation</strong>; jurisdiction packs India and USA.</li>
+<li>SSO (SAML); admin model overrides; WCAG work; SOC 2 Type I preparation.</li>
+<li><strong>Release R3:</strong> GA. <strong>Exit:</strong> 10+ paying customers; at least one Gulf customer or partner; one completed migration case study.</li>
+</ul>
+<h3 id="phase-4-v20-enterprise-regulated-and-international-months-1318-r4">Phase 4 — v2.0: enterprise, regulated, and international (Months 13–18) → <strong>R4</strong></h3>
+<p><strong>Goal:</strong> win regulated and international enterprise deals.</p>
+<ul>
+<li><strong>Compliance pack:</strong> WORM evidence, hash-chained ledger, trusted timestamps, e-signatures, approval workflows, segregation of duties, retention and legal hold, AI provenance, frozen configurations, traceability matrix export, vendor documentation.</li>
+<li>Pharmacovigilance domain pack (case processing, MedDRA upgrades, E2B(R3)); jurisdiction packs Saudi Arabia, UAE, EU.</li>
+<li><strong>Deployment models:</strong> dedicated single-tenant and client-cloud (BYOC); 2–3 hosting regions with tenant pinning.</li>
+<li>SCIM, customer-managed keys, auditor role and reports; self-hosted model presets.</li>
+<li>iOS + broader device matrix; more migration sources (Cypress, Katalon); translation workflow and more UI languages.</li>
+<li>Defect escape analysis; plugin SDK; regional pricing; SOC 2 Type I or ISO 27001 completed; VPAT published.</li>
+<li><strong>Release R4.</strong> <strong>Exit:</strong> first paid regulated-enterprise customer (BFSI or PV); passed at least one customer security/vendor audit.</li>
+</ul>
+<h3 id="phase-5-v25-scale-advanced-ai-ecosystem-months-1824-r5">Phase 5 — v2.5: scale, advanced AI, ecosystem (Months 18–24) → <strong>R5</strong></h3>
+<p><strong>Goal:</strong> deepen the moat and scale operations.</p>
+<ul>
+<li>On-premise and air-gapped deployments (self-hosted LLMs).</li>
+<li>Explorer agent; non-functional add-ons (performance smoke, OWASP ZAP baseline, visual regression, contract testing).</li>
+<li>"Ask your test data"; fine-tuning option for large clients; production read-only synthetic monitoring.</li>
+<li>Marketplace for plugins and packs; jurisdiction packs UK and Singapore; more domain packs (insurance, healthcare).</li>
+<li>SOC 2 Type II; ISO 42001 readiness; DR drills across regions.</li>
+<li><strong>Release R5.</strong> <strong>Exit:</strong> product covers this full plan; repeatable sales motion in at least two regions.</li>
+</ul>
+<h3 id="continuous-tracks-every-phase">Continuous tracks (every phase)</h3>
+<ul>
+<li><strong>Evals:</strong> every new capability ships with its eval suite (§20).</li>
+<li><strong>Security &amp; reliability:</strong> scanning, backups, restore tests, incident reviews.</li>
+<li><strong>i18n:</strong> every new string externalized; RTL checked.</li>
+<li><strong>Docs &amp; content:</strong> docs updated per release; one blog/video per phase.</li>
+<li><strong>Customer feedback:</strong> design-partner calls every two weeks; roadmap reviewed each phase exit.</li>
+</ul>
+<hr />
+<h2 id="27-team-budget-funding">27. Team, Budget &amp; Funding</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Recommended team</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–1</td>
+<td>You (solo), ideally 25–30 hours/week if possible; design partners for feedback</td>
+</tr>
+<tr>
+<td>2</td>
+<td>+ 1 full-stack engineer (contract or part-time), funded by consulting or partner fees</td>
+</tr>
+<tr>
+<td>3</td>
+<td>+ 1 mobile/automation engineer; part-time product designer</td>
+</tr>
+<tr>
+<td>4</td>
+<td>+ DevOps/SRE; part-time compliance consultant; customer success</td>
+</tr>
+<tr>
+<td>5</td>
+<td>+ sales/business development for Gulf and US; second backend engineer</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Budget categories to estimate in Phase 0:</strong> cloud hosting, LLM tokens for development and evals, device farm, email, domain/legal/incorporation, insurance, certification audits (SOC 2/ISO), tooling, contractors, marketing.</p>
+<blockquote>
+<p><strong>💡 Recommendation:</strong> Apply for <strong>cloud startup credit programs</strong> (the major clouds and several AI providers run them) before spending on infrastructure. Fund Phases 1–2 from consulting; decide on raising external funding at the end of Phase 2, when you have paying customers and usage data.</p>
+</blockquote>
+<hr />
+<h2 id="28-risks-mitigations">28. Risks &amp; Mitigations</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scope too large for a small team</td>
+<td>Never ships</td>
+<td>Strict release scope (§25), phase exits, defer anything not validated by customers</td>
+</tr>
+<tr>
+<td>Solo bandwidth / burnout</td>
+<td>Delays</td>
+<td>Services revenue to fund help from Phase 2; managed services; ruthless prioritization</td>
+</tr>
+<tr>
+<td>LLM generates wrong/weak cases or scripts</td>
+<td>Trust loss</td>
+<td>Review gates, dry runs, evals in CI</td>
+</tr>
+<tr>
+<td>False heals</td>
+<td>Bugs escape</td>
+<td>Locators only, never assertions; confidence thresholds; PR review</td>
+</tr>
+<tr>
+<td>Heal PR flood</td>
+<td>Reviewer fatigue</td>
+<td>One PR per run grouped by root cause; update existing PR</td>
+</tr>
+<tr>
+<td>Targeted regression misses a regression</td>
+<td>Escapes</td>
+<td>Mandatory set, scheduled full regression, residual-risk statement, escape analysis</td>
+</tr>
+<tr>
+<td>TMS sync conflicts or duplicates</td>
+<td>Data mess, distrust</td>
+<td>System of record, field ownership, external IDs, idempotent sync, conflict comments</td>
+</tr>
+<tr>
+<td>Wrong business formula</td>
+<td>Every related test wrong</td>
+<td>Mandatory approval, business test vectors, compare across layers</td>
+</tr>
+<tr>
+<td>LLM costs exceed revenue</td>
+<td>Unprofitable</td>
+<td>Tiering, caching, budgets, BYOK, unit-economics tracking</td>
+</tr>
+<tr>
+<td>Provider model changes</td>
+<td>Silent regressions</td>
+<td>Versioned presets, evals before rollout, pinned versions</td>
+</tr>
+<tr>
+<td>Lower AI quality in Arabic or other languages</td>
+<td>Poor adoption in Gulf</td>
+<td>Per-language evals, provider choice per language, bilingual cases, native reviewers at design partners</td>
+</tr>
+<tr>
+<td>Prompt injection / destructive agent actions</td>
+<td>Security incident, data loss</td>
+<td>Untrusted-input handling, tool allow-lists, environment classification, action policies, kill switch</td>
+</tr>
+<tr>
+<td>Client data leaking across tenants</td>
+<td>Legal breach</td>
+<td>RLS everywhere, packs built only from generic content, dedicated deployments when needed</td>
+</tr>
+<tr>
+<td>DB access concerns</td>
+<td>Deal blocker</td>
+<td>Read-only, runner-only access, self-hosted runners, masking</td>
+</tr>
+<tr>
+<td>Jurisdiction pack outdated</td>
+<td>Wrong evidence/rules</td>
+<td>Versioned packs with owners, scheduled reviews, local partners</td>
+</tr>
+<tr>
+<td>In-country hosting unavailable</td>
+<td>Lost deals</td>
+<td>Self-hosted runners, BYOC, on-prem</td>
+</tr>
+<tr>
+<td>Over-claiming compliance</td>
+<td>Legal/reputational risk</td>
+<td>"Supports compliance" positioning, client validation, no "certified" claims</td>
+</tr>
+<tr>
+<td>AI summaries misstate numbers</td>
+<td>Credibility loss</td>
+<td>Deterministic metrics, linked figures, narrative evals</td>
+</tr>
+<tr>
+<td>Support load from many deployment models</td>
+<td>Team overload</td>
+<td>Sell SaaS + runners first; one packaging (ADR-016); enterprise-only for the rest</td>
+</tr>
+<tr>
+<td>Competitors with funding</td>
+<td>Hard deals</td>
+<td>Code-first, TMS-friendly, domain + jurisdiction depth, services channel</td>
+</tr>
+<tr>
+<td>Framework churn (LangGraph/MCP)</td>
+<td>Rework</td>
+<td>Thin adapter layers; pinned versions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="29-portfolio-checklist-next-30-days">29. Portfolio Checklist &amp; Next 30 Days</h2>
+<h3 id="291-what-a-client-or-hiring-manager-should-see-in-the-repo">29.1 What a client or hiring manager should see in the repo</h3>
+<ul>
+<li>☐ README with a 2-minute demo video and architecture diagram</li>
+<li>☐ One-command local setup (<code>docker compose up</code>)</li>
+<li>☐ ADRs explaining key decisions</li>
+<li>☐ Published eval results with trends, including multilingual</li>
+<li>☐ LLM tracing screenshots (Langfuse/LangSmith)</li>
+<li>☐ Security section: tenancy, sandboxing, prompt-injection and production-safety guardrails</li>
+<li>☐ Demo: requirement → cases → QA lead approval → scripts → Jira/Xray updated, no duplicates</li>
+<li>☐ Demo: one shared locator break healed in one PR covering many tests</li>
+<li>☐ Demo: loan EMI verified across UI, DB, and downloaded PDF statement</li>
+<li>☐ Demo: a release where two stories change → mini regression with explanations and residual risk</li>
+<li>☐ Demo: Arabic BRD → bilingual cases</li>
+<li>☐ Sample executive one-pager and an audit evidence package (PDF/A + manifest)</li>
+<li>☐ Test coverage badge and passing CI; live read-only demo tenant</li>
+<li>☐ Blog post per phase</li>
+</ul>
+<h3 id="292-next-30-days">29.2 Next 30 days</h3>
+<ol>
+<li>Book and run the first 10 discovery interviews; write the findings up.</li>
+<li>Finalize the name; reserve GitHub org and domain; start trademark search.</li>
+<li>Create the monorepo (§21); add licenses, CONTRIBUTING, and code of conduct for the open components.</li>
+<li><code>docker-compose.yml</code> with Postgres (pgvector), Redis, MinIO, Langfuse.</li>
+<li>FastAPI: health check, OIDC stub, Organization / Project / Feature models with RLS; environment classification with production blocked.</li>
+<li>Next.js shell with i18n and RTL support from the first page.</li>
+<li>Demo bank API (Loans, Payments, Cards) with OpenAPI spec and a short BRD in English and Arabic.</li>
+<li>Ingestion v0 with chunk hashing; first <code>spec + context → manual cases</code> graph with structured output, traced in Langfuse.</li>
+<li>10 golden eval cases for case generation (English) and 5 (Arabic).</li>
+<li>Write ADR-001 to ADR-016; post "Day 1: building an AI-native test platform" publicly.</li>
+</ol>
+<hr />
+<p><em>Living document — revisit after every phase exit and every design-partner conversation.</em></p></main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>if(window.mermaid){mermaid.initialize({startOnLoad:true,theme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'neutral'});}</script>
+</body>
+</html>
