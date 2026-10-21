@@ -58,6 +58,23 @@ Full detail lives in the local `Plan/qualiflow-build-plan.md` (not published —
 - Alembic has no equivalent of uvicorn's `--env-file` flag, so `Settings()` silently fell back to its `"changeme"` default password when migrations ran — fixed by loading `.env` directly inside `settings.py` (via `python-dotenv`), so every entry point (alembic, pytest, uvicorn) behaves identically.
 - **psycopg's async driver can't use Windows' default `ProactorEventLoop`** — only `SelectorEventLoop`. This would have broken the real running app too (uvicorn on Windows defaults to Proactor), not just this test, so the fix lives in `qualiflow_api/__init__.py` (runs before any submodule, from any entry point) rather than a test-only fixture.
 
-## M0.4 – M0.10 — Walking Skeleton
+## M0.4 — First LangGraph node ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: first LangGraph node, the demo bank fixture, ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.
+- [x] `apps/agents`: new workspace member (LangGraph + LiteLLM + Pydantic), separate from `apps/api` per ADR's control-plane/agent split.
+- [x] `tiers.py` — the tier-alias resolution §15.3 describes (`qf-fast` → a real model string), using a **Groq** preset rather than the plan's default OpenAI one — exactly the pluggability §15.3 anticipates (each tenant maps tiers to whichever provider they have a key for).
+- [x] One-node graph (`hello_graph.py`): calls the LLM with OpenAI-style strict JSON-schema structured output, validated into a one-field Pydantic model.
+- [x] No tracing backend (§0) — `logging_utils.py` logs tokens/latency/cost as one JSON line per call instead.
+- [x] Exposed via `GET /hello/{name}` on a FastAPI app (port 8002) — tested live, real response: `{"greeting": "Hello Anoop, hope you're having a wonderful day!"}`.
+- [x] Test is **deliberately not mocked** — it makes a real call to Groq. Wired into CI as its own `agents` job with a `GROQ_API_KEY` secret (not yet addable — no GitHub remote exists yet, per the M0.0 local-only decision; add it once pushed).
+
+**Clarified, not just decided — grounded in the plan's own words:** `apps/agents` calling a real LLM does **not** contradict the plan's determinism promise. §3 principle 1 ("AI authors and maintains; deterministic engines execute") and ADR-002 ("No LLM in the hot path of regression execution") are about **generated test execution** — the downstream artifact an agent produces, which runs with zero LLM calls once it exists (see M0.9's own note on this). `apps/agents` *is* the authoring layer; calling a real LLM is its job, not an exception to the rule.
+
+**Bugs and real-world gaps hit along the way:**
+
+- `apps/agents` had no `.env`-loading mechanism at all (never needed one before) — added the same `load_dotenv()`-in-`__init__.py` pattern as `apps/api`.
+- Guessed Groq model names from memory (`llama-3.1-8b-instant`, `llama-3.3-70b-versatile`) — **wrong**, not available on this account. Queried `GET /v1/models` with the real key instead of guessing again; landed on `openai/gpt-oss-20b`/`120b`, which Groq actually serves.
+- LiteLLM's `completion_cost()` doesn't have `groq/openai/gpt-oss-20b` mapped (its nested `openai/` confuses LiteLLM's own provider-prefix detection, reporting `custom_llm_provider=openai` instead of `groq`) — added a small, explicitly-cited manual fallback price table (`$0.075`/`$0.30` per 1M input/output tokens, cross-checked against three independent sources) rather than silently report no cost or guess a number.
+
+## M0.5 – M0.10 — Walking Skeleton
+
+Not started. See the build plan for the full sequence: the demo bank fixture, ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.

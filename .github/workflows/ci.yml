@@ -86,3 +86,33 @@ jobs:
 
       - name: pytest (apps/api, integration — real Postgres, real RLS)
         run: uv run --project apps/api pytest apps/api/tests/integration -v
+
+  agents:
+    runs-on: ubuntu-latest
+    # Requires a GROQ_API_KEY repo secret (Settings -> Secrets and
+    # variables -> Actions -> New repository secret) once this repo is
+    # pushed to GitHub -- it doesn't exist yet as of M0.4 (still local-
+    # only per the M0.0 decision), so this job will fail on GROQ auth
+    # until that secret is added.
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv (Python tooling)
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install apps/agents dependencies (incl. dev group)
+        run: uv sync --project apps/agents --group dev
+
+      # Deliberately NOT mocked -- apps/agents is the AUTHORING layer
+      # (plan §3 principle 1: "AI authors and maintains; deterministic
+      # engines execute"), which is supposed to call a real LLM. That's
+      # different from generated test EXECUTION (ADR-002: no LLM in the
+      # hot path of regression execution), which never does and never
+      # will. Mocking this test would only prove a mock matches our own
+      # assumptions, not that the real integration works -- so this job
+      # makes one real, near-zero-cost call to Groq per run.
+      - name: pytest (apps/agents — real Groq call, no mocking)
+        run: uv run --project apps/agents pytest apps/agents/tests -v
