@@ -1,0 +1,102 @@
+name: qualiflow
+
+# Runs the same whether the active docker context is local or remote
+# (this machine's default context is the ssh://data@192.168.1.14
+# "fedora-host" context) — every volume below is a named volume, which
+# the daemon manages on its own side, never a bind mount to a path on
+# THIS machine. The one service with real config (Prometheus) gets it
+# baked into a custom image at build time instead, for the same reason.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${QUALIFLOW_PG_USER}
+      POSTGRES_PASSWORD: ${QUALIFLOW_PG_PASSWORD}
+      POSTGRES_DB: ${QUALIFLOW_PG_DB}
+    ports:
+      - "${QUALIFLOW_PG_PORT}:5432"
+    volumes:
+      - qualiflow_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${QUALIFLOW_PG_USER} -d ${QUALIFLOW_PG_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${QUALIFLOW_REDIS_PORT}:6379"
+
+  minio:
+    # Neither minio/minio (Docker Hub) nor quay.io/minio/minio pull
+    # anonymously anymore (MinIO locked down distribution; the one
+    # remaining free community tag also carries a known CVE). Chainguard's
+    # build is a legitimate, actively maintained anonymous alternative —
+    # verified pullable without auth before pinning this.
+    image: cgr.dev/chainguard/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${QUALIFLOW_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${QUALIFLOW_MINIO_ROOT_PASSWORD}
+    ports:
+      - "${QUALIFLOW_MINIO_API_PORT}:9000"
+      - "${QUALIFLOW_MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - qualiflow_minio_data:/data
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    # No config file mounted — the config is the whole YAML document
+    # below, passed as one environment variable. The collector's `env:`
+    # config provider reads it directly, so there's no file path to
+    # resolve on the remote daemon at all.
+    command: ["--config=env:OTELCOL_CONFIG"]
+    environment:
+      OTELCOL_CONFIG: |
+        receivers:
+          otlp:
+            protocols:
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
+        processors:
+          batch: {}
+        exporters:
+          prometheus:
+            endpoint: 0.0.0.0:8889
+        service:
+          pipelines:
+            metrics:
+              receivers: [otlp]
+              processors: [batch]
+              exporters: [prometheus]
+    ports:
+      - "${QUALIFLOW_OTEL_GRPC_PORT}:4317"
+      - "${QUALIFLOW_OTEL_HTTP_PORT}:4318"
+
+  prometheus:
+    build: ./infra/prometheus
+    ports:
+      - "${QUALIFLOW_PROMETHEUS_PORT}:9090"
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: ${QUALIFLOW_GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${QUALIFLOW_GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "${QUALIFLOW_GRAFANA_PORT}:3000"
+    volumes:
+      - qualiflow_grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  qualiflow_pg_data:
+  qualiflow_minio_data:
+  qualiflow_grafana_data:
