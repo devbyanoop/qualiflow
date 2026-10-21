@@ -116,3 +116,72 @@ jobs:
       # makes one real, near-zero-cost call to Groq per run.
       - name: pytest (apps/agents — real Groq call, no mocking)
         run: uv run --project apps/agents pytest apps/agents/tests -v
+
+  knowledge:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: qualiflow
+          POSTGRES_PASSWORD: ci_pw
+          POSTGRES_DB: qualiflow
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      # Plain pre-built image (unlike infra/postgres's custom build),
+      # so this works directly as a services: entry. GitHub Actions
+      # services: has no way to pass CLI args to the container, so
+      # --model-id becomes the MODEL_ID env var instead (confirmed via
+      # the image's own --help: every CLI flag has an env equivalent).
+      # The small multilingual model (~470MB), not BAAI/bge-m3 -- see
+      # docker-compose.yml's embeddings service comment for why.
+      embeddings:
+        image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4
+        env:
+          MODEL_ID: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+        ports:
+          - 8085:80
+    env:
+      QUALIFLOW_PG_HOST: localhost
+      QUALIFLOW_PG_PORT: 5433
+      QUALIFLOW_PG_USER: qualiflow
+      QUALIFLOW_PG_PASSWORD: ci_pw
+      QUALIFLOW_PG_APP_PASSWORD: ci_app_pw
+      QUALIFLOW_EMBEDDINGS_PORT: 8085
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv (Python tooling)
+        uses: astral-sh/setup-uv@v3
+
+      # Migrations live in apps/api's Alembic environment (the single
+      # shared schema source — see apps/api/alembic/versions/
+      # ae3bdda90862), so this job needs apps/api installed too, even
+      # though the tests below only exercise apps/knowledge.
+      - name: Install apps/api dependencies (for migrations)
+        run: uv sync --project apps/api --group dev
+
+      - name: Create restricted app role (mirrors infra/postgres/init-app-role.sh)
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=ci_pw psql -h localhost -p 5433 -U qualiflow -d qualiflow -c \
+            "CREATE ROLE qualiflow_app LOGIN PASSWORD 'ci_app_pw'; GRANT CONNECT ON DATABASE qualiflow TO qualiflow_app;"
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+
+      - name: Install apps/knowledge dependencies (incl. dev group)
+        run: uv sync --project apps/knowledge --group dev
+
+      # Deliberately NOT mocked, same reasoning as apps/agents — this
+      # is a real call to the self-hosted embeddings service, proving
+      # the delta-hash skip against real storage, not an assumption.
+      - name: pytest (apps/knowledge — real embeddings, real delta-hash)
+        run: uv run --project apps/knowledge pytest apps/knowledge/tests/integration -v

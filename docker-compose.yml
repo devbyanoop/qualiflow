@@ -33,6 +33,24 @@ services:
     ports:
       - "${QUALIFLOW_REDIS_PORT}:6379"
 
+  embeddings:
+    # Pinned, not cpu-latest -- a floating tag's version drift is a
+    # real risk for a model-serving image. Official HF image, not a
+    # random third-party pre-baked one.
+    #
+    # BAAI/bge-m3 (2.2GB on disk) OOM-killed (exit 137) repeatedly even
+    # at ~11GB VM memory -- its CPU/ONNX warmup needs far more than its
+    # disk size suggests, and pushing the host's Docker Desktop memory
+    # limit further started starving the HOST itself (its own GUI
+    # stopped responding). Switched to a much smaller multilingual
+    # model instead of continuing to chase memory ceilings.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4
+    command: ["--model-id", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
+    ports:
+      - "${QUALIFLOW_EMBEDDINGS_PORT}:80"
+    volumes:
+      - qualiflow_embeddings_cache:/data
+
   minio:
     # Neither minio/minio (Docker Hub) nor quay.io/minio/minio pull
     # anonymously anymore (MinIO locked down distribution; the one
@@ -119,3 +137,4 @@ volumes:
   qualiflow_minio_data:
   qualiflow_grafana_data:
   qualiflow_keycloak_data:
+  qualiflow_embeddings_cache:

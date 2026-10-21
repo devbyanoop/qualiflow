@@ -85,6 +85,32 @@ Full detail lives in the local `Plan/qualiflow-build-plan.md` (not published —
 
 **Real findings, verified against the running app, not guessed from reading code:** NovaPay's `POST /api/transfers` (the JSON API path) diverges from its own `POST /transfer` (HTML form path) in three ways — it doesn't reject `fromAccountId == toAccountId`, doesn't verify the source account belongs to the caller (any logged-in user can empty any account by id), and doesn't write transaction-history rows for either leg. `GET /api/accounts/:id` has the same ownership gap. These are documented in `openapi.yaml`, not fixed — NovaPay isn't QualiFlow's to patch. **Deliberately left in place as a future milestone's payoff:** once case generation (M0.7) and automation (M0.9) exist, a negative test for "can't transfer from an account you don't own" should be generated, run, and genuinely fail against the real API — a concrete demonstration that generation finds real gaps, not just confirms happy paths.
 
-## M0.6 – M0.10 — Walking Skeleton
+## M0.6 — Ingestion v0 ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.
+- [x] `apps/knowledge`: new workspace member. `POST /ingest` — hash → delta-hash skip check → embed (only if new) → store in pgvector with `org_id`/`feature_id`.
+- [x] **Done when, proven for real:** first ingest of the NovaPay transfer BRD → `{"embedded": true}`; identical second ingest → `{"embedded": false}`, same `chunk_id` both times. Verified the stored row directly in Postgres: real 384-dim vector, exactly one row despite two calls.
+- [x] Automated integration test (`apps/knowledge/tests/integration/test_delta_hash.py`) captures this proof — real DB, real embeddings call, no mocking. Wired into a new `knowledge` CI job.
+
+**Embeddings provider — resolved through a real incident, not a clean decision:**
+
+The locked choice was OpenAI `text-embedding-3-large`; we only have a Groq key, and Groq has no embeddings endpoint at all (confirmed via its `/v1/models` listing). The plan's own fallback — self-hosted **BGE-M3** — became primary, promoted ahead of schedule rather than "later for air-gapped."
+
+BGE-M3 (2.2GB on disk) **OOM-killed repeatedly** (`exit 137`) on this machine's Docker engine, which only had ~3.7GB usable (the same ceiling flagged for Langfuse back in M0.1). What followed, in order:
+
+1. Raised Docker Desktop's VM memory to 8192 MiB via `~/.docker/desktop/settings-store.json` (`MemoryMiB`, confirmed the correct key empirically — the file had no memory key by default). BGE-M3 still OOM'd.
+2. Raised further to 11264 MiB. Still OOM'd, identically, despite the other 7 containers combined using only ~1.7GB — strong signal that BGE-M3's actual CPU/ONNX warmup footprint on this runtime is far larger than its disk size suggests, not simply "not enough RAM allocated."
+3. **This nearly broke the host.** At 11GB allocated, the Fedora host's own free memory dropped to 189Mi with swap in use — Docker Desktop's GUI stopped responding for the user. Diagnosed by checking `free -h` directly; confirmed by stopping Docker Desktop and watching available memory jump from 2.7Gi to 13Gi instantly.
+4. Reverted to 8192 MiB. Learned along the way that `docker desktop restart` does **not** reliably reload `settings-store.json` from disk (a second edit was silently ignored, with the service re-writing its own stale cached value back over it) — a clean **`stop` → edit file → `start`** sequence is required for a settings change to actually take effect.
+5. **Abandoned BGE-M3** rather than keep escalating memory with diminishing returns. Switched to `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (~470MB) on the same TEI image — warmed up in seconds, no OOM. 384 dimensions, not BGE-M3's 1024 — the `knowledge_chunks` migration was corrected before applying it, confirmed against the running service rather than assumed.
+
+**The Windows event-loop bug this milestone forced us to actually understand (not just patch again):**
+
+M0.3's `__init__.py` fix (`asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())`) was real but had never been tested through a *live* server touching the database — only through pytest. Running `apps/knowledge`'s server for real exposed why: **uvicorn's own `Server.run()` directly instantiates `asyncio.ProactorEventLoop`** on Windows (`uvicorn/loops/asyncio.py`, whenever `workers==1` and reload is off) — it never consults the event-loop *policy* at all, so no policy-based fix can touch this code path. Confirmed by reading uvicorn's source directly rather than guessing further. The real fix: stop using `uvicorn.run(app, ...)`; build the `Config`/`Server` objects directly and drive `server.serve()` on our own explicitly-constructed `SelectorEventLoop`. Applied to `apps/knowledge/main.py`, and proactively to `apps/api/main.py` too (which has the identical latent bug — no DB-touching endpoint is wired up there yet, so it was never triggered, but it will be).
+
+**One more real bug, caught only by actually running the INSERT:** `:embedding::vector` in a SQLAlchemy `text()` statement silently fails to bind — SQLAlchemy's parameter parser reads `::` as Postgres's cast operator and leaves `:embedding` completely unprocessed (not a compile error; the literal string reaches psycopg, which then fails with a syntax error). Fixed with a space: `:embedding ::vector`.
+
+**CI gap closed along the way:** GitHub Actions' `services:` has no way to pass CLI arguments to a container. Confirmed via the TEI image's own `--help` that every flag has an environment-variable equivalent (`--model-id` → `MODEL_ID`), tested locally before trusting it in CI.
+
+## M0.7 – M0.10 — Walking Skeleton
+
+Not started. See the build plan for the full sequence: first generation, the human review gate, first automated script, and minimal evidence hashing.
