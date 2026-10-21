@@ -28,6 +28,20 @@ Full detail lives in the local `Plan/qualiflow-build-plan.md` (not published —
 - Bind-mount volumes don't work against the remote `fedora-host` Docker context — the daemon resolves paths on *its own* filesystem, not this Windows machine's. Prometheus's config is baked into a custom image via `build:` instead (works over the remote context since the build context gets streamed to wherever the daemon is); the OTel Collector's config is passed as a whole YAML string via its `env:` config provider, avoiding the need for a mount entirely.
 - The remote Docker engine is actually **Docker Desktop** running in its own `linuxkit` VM on the Fedora host (`Name: docker-desktop` in `docker info`) — not the native `docker.service` systemd unit. Checking `systemctl is-active docker` was checking the wrong thing entirely; it'll always show `inactive` regardless of whether the real engine is up.
 
-## M0.2 – M0.10 — Walking Skeleton
+## M0.2 — API skeleton ✅ (2026-10-21)
 
-Not started. See the build plan for the full sequence: API skeleton + auth, tenant isolation (RLS) proven via a leak test, first traced LangGraph node, the demo bank fixture, ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.
+- [x] `apps/api`: FastAPI app (`src/qualiflow_api/`), `uv` workspace root at repo root.
+- [x] Keycloak container (`quay.io/keycloak/keycloak`, `start-dev`) — realm `qualiflow`, confidential client `qualiflow-api` with service-accounts (client-credentials grant) enabled, provisioned via `kcadm.sh` (not a baked realm-import JSON — same remote-bind-mount reasoning as Prometheus in M0.1).
+- [x] `/healthz` (unauthenticated, 200) and `/protected` (JWT-gated via Keycloak JWKS, 401 without/invalid token, 200 with a real one) — all three states verified against a real token from the running Keycloak.
+- [x] OpenTelemetry metrics wired (`FastAPIInstrumentor` + `MeterProvider` → OTel Collector → Prometheus) — confirmed real `http_server_duration_milliseconds_count` series showing up in Prometheus, broken down by endpoint and status code.
+- [x] First unit tests (`apps/api/tests/test_main.py`, 3 passing) and CI updated to actually run them.
+
+**Bugs hit and fixed (worth remembering):**
+
+- **Clock-skew `ImmatureSignatureError`:** PyJWT rejected a genuinely valid token because Keycloak (on the remote Fedora host) and this machine's clocks differ by ~4 seconds — normal NTP drift, not a real problem. Fixed with `leeway=10` on `jwt.decode()`. If this ever needs much more leeway than that, it's a sign of an actual clock-sync problem, not something to paper over with a bigger number.
+- **Port collision via Windows' exact-match socket binding:** `localhost:8000` kept routing to kbguard's already-running MkDocs dev server (bound to exactly `127.0.0.1:8000`) instead of our FastAPI app (bound to `0.0.0.0:8000`) — Windows prefers the more specific bind. Not a bug in our app; just moved the API to port 8001.
+- **`Settings()` instantiated at import time with no defaults** meant `apps.qualiflow_api.main` couldn't even be imported without `.env` loaded — which broke the *first* unit test we wrote, and would have broken CI identically (no `.env` there, and these tests never call the real Keycloak anyway). Fixed by giving `keycloak_issuer`/`api_client_id` safe defaults; real runs still override them via uvicorn's `--env-file`.
+
+## M0.3 – M0.10 — Walking Skeleton
+
+M0.3 (tenant isolation) onward not started. See the build plan for the full sequence: RLS proven via a leak test, first LangGraph node, the demo bank fixture, ingestion, first generation, the human review gate, first automated script, and minimal evidence hashing.

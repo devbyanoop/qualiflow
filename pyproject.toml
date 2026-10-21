@@ -1,0 +1,13 @@
+[project]
+name = "qualiflow"
+version = "0.0.0"
+requires-python = ">=3.11"
+
+[tool.uv.workspace]
+members = ["apps/*", "packages/*"]
+
+[tool.uv]
+# This root isn't installed as a package itself — it just defines the
+# workspace. Each app/package under apps/*, packages/* is its own
+# installable project with its own pyproject.toml.
+package = false

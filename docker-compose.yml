@@ -77,6 +77,20 @@ services:
       - "${QUALIFLOW_OTEL_GRPC_PORT}:4317"
       - "${QUALIFLOW_OTEL_HTTP_PORT}:4318"
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    # start-dev is explicitly not for production (see the image's own
+    # --help output) — fine for the Walking Skeleton, revisit before
+    # anything resembling a real deployment.
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${QUALIFLOW_KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${QUALIFLOW_KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "${QUALIFLOW_KEYCLOAK_PORT}:8080"
+    volumes:
+      - qualiflow_keycloak_data:/opt/keycloak/data
+
   prometheus:
     build: ./infra/prometheus
     ports:
@@ -100,3 +114,4 @@ volumes:
   qualiflow_pg_data:
   qualiflow_minio_data:
   qualiflow_grafana_data:
+  qualiflow_keycloak_data:
