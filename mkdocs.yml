@@ -1,0 +1,59 @@
+site_name: qualiflow
+site_description: AI-native test automation platform — agentic generation, execution, healing, and triage across web, mobile, and API.
+repo_name: qualiflow
+repo_url: https://github.com/devbyanoop/qualiflow
+strict: true
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - Guide:
+      - Architecture overview: guide/architecture.md
+      - Knowledge base & RAG: guide/knowledge-base.md
+      - Test design & review: guide/test-design.md
+      - Automation & validation: guide/automation-validation.md
+  - Reference:
+      - CLI: reference/cli.md
+  - Project:
+      - Roadmap & status: project/roadmap.md
+      - FAQ: project/faq.md
+      - Contributing: project/contributing.md
+      - Changelog: project/changelog.md
