@@ -14,6 +14,7 @@ from .evidence import store_evidence
 from .generate_tests import ChunkNotFoundError, build_graph
 from .hello_graph import hello_graph
 from .settings import settings
+from .targets import TargetNotFoundError, get_target
 
 
 @asynccontextmanager
@@ -77,9 +78,50 @@ async def generate(req: GenerateRequest, request: Request) -> dict:
     return {"thread_id": thread_id, "pending_review": interrupts[0].value}
 
 
+class TargetAppRequest(BaseModel):
+    org_id: str
+    feature_id: str
+    base_url: str
+    openapi_spec: str
+
+
+@app.post("/targets")
+async def register_target(req: TargetAppRequest) -> dict:
+    """Registers the system under test for an org/feature -- what
+    api_automation_agent.py used to hardcode as NovaPay's URL and
+    fixtures/novapay/openapi.yaml. No credentials here: auth is
+    supplied per /review request instead (see ReviewRequest.target_auth),
+    never persisted. NovaPay is registered through this same endpoint
+    like any other target, not a special case in code."""
+    target_id = str(uuid.uuid4())
+    async with db_engine.begin() as conn:
+        await conn.execute(
+            text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": req.org_id}
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO target_apps (id, org_id, feature_id, base_url, openapi_spec) "
+                "VALUES (:id, :org_id, :feature_id, :base_url, :openapi_spec)"
+            ),
+            {
+                "id": target_id,
+                "org_id": req.org_id,
+                "feature_id": req.feature_id,
+                "base_url": req.base_url,
+                "openapi_spec": req.openapi_spec,
+            },
+        )
+    return {"target_id": target_id}
+
+
 class ReviewRequest(BaseModel):
     action: str  # "approve" | "edit" | "reject"
     edited_case: dict | None = None
+    # Credentials the generated resolver/test script needs against the
+    # registered target (e.g. {"username": ..., "password": ...}).
+    # Required for approve/edit -- never persisted, used for this
+    # request only.
+    target_auth: dict | None = None
 
 
 @app.post("/review/{thread_id}")
@@ -88,6 +130,8 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
         raise HTTPException(status_code=422, detail=f"Unknown action {req.action!r}")
     if req.action == "edit" and req.edited_case is None:
         raise HTTPException(status_code=422, detail="edited_case is required when action is 'edit'")
+    if req.action in {"approve", "edit"} and not req.target_auth:
+        raise HTTPException(status_code=422, detail="target_auth is required for action 'approve' or 'edit'")
 
     config = {"configurable": {"thread_id": thread_id}}
     graph = request.app.state.generate_tests_graph
@@ -130,11 +174,25 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
     }
 
     if req.action in {"approve", "edit"}:
-        # api_automation_agent, M0.9. Both generate_pytest_script
-        # (litellm.completion) and dry_run (subprocess.run) are
-        # blocking calls -- to_thread so they don't stall this async
-        # handler's event loop for the ~10-20s this takes.
-        script = await asyncio.to_thread(generate_pytest_script, final_case, result["retrieved_chunk"])
+        try:
+            target = await get_target(org_id, result["feature_id"])
+        except TargetNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from None
+
+        # api_automation_agent, M0.9/M0.10. Both generate_pytest_script
+        # (litellm.completion, including the resolver sub-step) and
+        # dry_run (subprocess.run) are blocking calls -- to_thread so
+        # they don't stall this async handler's event loop for the
+        # ~10-20s this takes.
+        try:
+            script = await asyncio.to_thread(
+                generate_pytest_script, final_case, result["retrieved_chunk"], target, req.target_auth
+            )
+        except RuntimeError as exc:
+            # The resolver ran for real against the real target and
+            # genuinely failed (e.g. no data satisfies the case) -- a
+            # real upstream failure, not a bug in our own code.
+            raise HTTPException(status_code=502, detail=str(exc)) from None
         run_result = await asyncio.to_thread(dry_run, script)
         automated_script_id = str(uuid.uuid4())
 
