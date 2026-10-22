@@ -2,7 +2,7 @@
 
 This page is the single source of truth for "is X actually built yet?" — updated the same day any item's status changes. If anything elsewhere in these docs seems to claim more than this page shows as done, trust this page.
 
-**Last updated:** 2026-10-21
+**Last updated:** 2026-10-22
 
 Full detail lives in the local `Plan/qualiflow-build-plan.md` (not published — see [Contributing](contributing.md) for why the planning docs stay private). This page tracks only what's actually shipped.
 
@@ -209,3 +209,11 @@ Six decisions already made and executed during the Walking Skeleton were only do
 - [x] **Proven both directions, live, not just by unit test:** registered a real target as `production`, confirmed `/review` returns `403` with no `allow_production`; confirmed the exact same call with `"allow_production": true` returns `200` and completes the full automation pipeline.
 - [x] **What this deliberately does NOT do, written into the ADR itself rather than discovered later:** `allow_production: true` only lifts the block — it does not verify the generated script is actually read-only. That's §8.5's separate "Action policies" guardrail (blocked HTTP methods, sandboxed side effects, rate limits, a kill switch), none of which exists yet. Documented as [ADR 0007](../adr/0007-environment-classification.md), not silently assumed covered.
 - [x] Full positive/negative/edge/regression test matrix (`test_environment_classification.py`, 10 tests): positive (every non-production environment never blocked; a registered target's real environment is fetched correctly), negative (production blocked by default; an invalid environment string rejected by the database directly, bypassing the API), edge (`allow_production` lifts the block; `allow_production=true` on a non-production target is a harmless no-op), regression (registering with no `environment` at all fails at the database layer — guards against the migration's temporary backfill default ever silently reappearing).
+
+## Bilingual (EN+AR) demo BRD ✅ (2026-10-22)
+
+Plan's Phase 0 deliverable: `fixtures/i18n-demo-brd.md`, a short, app-agnostic business rule (minimum age for account opening) written in English and Arabic side by side — unlike `novapay/brd-transfer-rule.md`, deliberately not tied to any specific target app. The translation note says plainly that it was written with AI assistance and hasn't had the native-speaker review the plan itself calls for (§4.5) before real use with a design partner.
+
+- [x] **Proven for real, not just written:** ingested the actual fixture through `apps/knowledge`'s real `/ingest` path, generated a manual case from it through `apps/agents`'s real `/generate`, both against the live stack.
+- [x] **A real near-miss investigated and resolved as a non-issue, not glossed over:** piping the `/generate` response through `curl | python -m json.tool` in this Windows Git Bash shell displayed what looked exactly like UTF-8-decoded-as-CP1252 mojibake (`â€”` instead of a plain em-dash). Investigated by fetching the raw response bytes to a file and checking actual Unicode codepoints and UTF-8 byte sequences directly in Python — confirmed `U+2014` (a correct em-dash) and correct Arabic codepoints both over the wire and in Postgres. The corruption was in this shell's own pipe-encoding handling, not in QualiFlow's ingestion, storage, or API response — genuinely easy to mistake for a real bug without checking at the byte level.
+- [x] Full positive/negative/edge/regression test matrix (`apps/knowledge/tests/integration/test_unicode_roundtrip.py`, 5 tests, real embeddings calls, no mocking): positive (Arabic text and the full bilingual fixture both round-trip byte-for-byte through Postgres), negative (delta-hash correctly treats two different Arabic documents as distinct, not collapsed by some encoding quirk), edge (mixed RTL/LTR text with Arabic combining diacritics — tashkeel — survives), regression (SHA-256 hashing is stable for non-ASCII content, guarding delta-hash specifically now that i18n content is flowing through it for the first time).
