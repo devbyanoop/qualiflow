@@ -52,6 +52,14 @@ nav:
       - Automation & validation: guide/automation-validation.md
   - Reference:
       - CLI: reference/cli.md
+  - Decisions:
+      - Overview: adr/index.md
+      - "0001 — Groq as default LLM provider": adr/0001-groq-as-default-llm-provider.md
+      - "0002 — NovaPay as external fixture": adr/0002-novapay-external-fixture.md
+      - "0003 — No hardcoded target app": adr/0003-no-hardcoded-target-app.md
+      - "0004 — Postgres RLS tenant isolation": adr/0004-postgres-rls-tenant-isolation.md
+      - "0005 — Self-hosted embeddings": adr/0005-self-hosted-embeddings.md
+      - "0006 — Skip Langfuse": adr/0006-skip-langfuse.md
   - Project:
       - Roadmap & status: project/roadmap.md
       - FAQ: project/faq.md

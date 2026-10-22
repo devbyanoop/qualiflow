@@ -11,3 +11,12 @@ members = ["apps/*", "packages/*"]
 # workspace. Each app/package under apps/*, packages/* is its own
 # installable project with its own pyproject.toml.
 package = false
+
+[dependency-groups]
+# Docs tooling doesn't belong to any one app -- a workspace-level dev
+# dependency group instead. `uv sync --all-packages --group docs` to
+# install, `uv run --group docs mkdocs serve` to use.
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+]
