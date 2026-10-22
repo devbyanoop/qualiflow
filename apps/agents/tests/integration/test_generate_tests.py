@@ -28,8 +28,9 @@ async def _seed_chunk(org_id: str, feature_id: str, content: str) -> None:
     async with engine.begin() as conn:
         await conn.execute(
             text(
-                "INSERT INTO knowledge_chunks (id, org_id, feature_id, doc_hash, chunk_hash, content, embedding) "
-                "VALUES (:id, :org_id, :feature_id, :hash, :hash, :content, :embedding ::vector)"
+                "INSERT INTO knowledge_chunks "
+                "(id, org_id, feature_id, doc_hash, chunk_hash, chunk_index, content, embedding) "
+                "VALUES (:id, :org_id, :feature_id, :hash, :hash, 0, :content, :embedding ::vector)"
             ),
             {
                 "id": str(uuid.uuid4()),

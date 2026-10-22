@@ -7,72 +7,31 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from qualiflow_knowledge.db import SessionLocal
-from qualiflow_knowledge.embeddings import embed
+from qualiflow_knowledge.ingestion import ingest
 from qualiflow_knowledge.settings import settings
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 BILINGUAL_BRD = (REPO_ROOT / "fixtures" / "i18n-demo-brd.md").read_text(encoding="utf-8")
 
 
-async def _ingest(org_id: str, feature_id: str, content: str) -> dict:
-    """Mirrors main.py's /ingest handler directly -- same pattern as
-    test_delta_hash.py, duplicated locally rather than imported (test
-    modules aren't regular packages here)."""
-    doc_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
-    async with SessionLocal() as session:
-        async with session.begin():
-            await session.execute(
-                text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": org_id}
-            )
-            existing = await session.execute(
-                text(
-                    "SELECT id FROM knowledge_chunks WHERE org_id = :org_id "
-                    "AND feature_id = :feature_id AND doc_hash = :doc_hash"
-                ),
-                {"org_id": org_id, "feature_id": feature_id, "doc_hash": doc_hash},
-            )
-            row = existing.first()
-            if row is not None:
-                return {"chunk_id": row.id, "embedded": False}
-
-            vector = embed(content)
-            chunk_id = str(uuid.uuid4())
-            vector_literal = "[" + ",".join(str(v) for v in vector) + "]"
-            await session.execute(
-                text(
-                    "INSERT INTO knowledge_chunks "
-                    "(id, org_id, feature_id, doc_hash, chunk_hash, content, embedding) "
-                    "VALUES (:id, :org_id, :feature_id, :doc_hash, :chunk_hash, :content, "
-                    ":embedding ::vector)"
-                ),
-                {
-                    "id": chunk_id,
-                    "org_id": org_id,
-                    "feature_id": feature_id,
-                    "doc_hash": doc_hash,
-                    "chunk_hash": doc_hash,
-                    "content": content,
-                    "embedding": vector_literal,
-                },
-            )
-    return {"chunk_id": chunk_id, "embedded": True}
-
-
-async def _fetch_content(org_id: str, feature_id: str) -> str:
+async def _fetch_chunks(org_id: str, feature_id: str) -> list[str]:
     async with SessionLocal() as session:
         await session.execute(text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": org_id})
         result = await session.execute(
-            text("SELECT content FROM knowledge_chunks WHERE org_id = :org_id AND feature_id = :feature_id"),
+            text(
+                "SELECT content FROM knowledge_chunks WHERE org_id = :org_id AND feature_id = :feature_id "
+                "ORDER BY chunk_index"
+            ),
             {"org_id": org_id, "feature_id": feature_id},
         )
-        return result.scalar_one()
+        return [row.content for row in result.all()]
 
 
 async def _cleanup(org_id: str) -> None:
     admin_engine = create_async_engine(settings.database_url_admin)
     async with admin_engine.begin() as conn:
         await conn.execute(text("DELETE FROM knowledge_chunks WHERE org_id = :org_id"), {"org_id": org_id})
+        await conn.execute(text("DELETE FROM documents WHERE org_id = :org_id"), {"org_id": org_id})
     await admin_engine.dispose()
 
 
@@ -84,25 +43,38 @@ async def test_positive_arabic_text_round_trips_byte_for_byte():
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     arabic = "يجب أن يبلغ عمر العميل 18 عامًا على الأقل لفتح حساب."
     try:
-        await _ingest(org_id, "arabic-feature", arabic)
-        stored = await _fetch_content(org_id, "arabic-feature")
-        assert stored == arabic
-        assert stored.encode("utf-8") == arabic.encode("utf-8")
+        async with SessionLocal() as session:
+            async with session.begin():
+                await ingest(session, org_id, "arabic-feature", "Arabic Test Doc", arabic)
+        chunks = await _fetch_chunks(org_id, "arabic-feature")
+        assert chunks == [arabic]  # no headings -> exactly one chunk, content untouched
+        assert chunks[0].encode("utf-8") == arabic.encode("utf-8")
     finally:
         await _cleanup(org_id)
 
 
 @pytest.mark.asyncio
-async def test_positive_real_bilingual_brd_fixture_round_trips_exactly():
-    """The actual Phase 0 demo fixture, ingested for real -- not a
-    synthetic snippet. Proves the whole EN+AR document, including
-    Markdown headings, an em-dash, and RTL Arabic in the same
-    document, comes back identical."""
+async def test_positive_real_bilingual_brd_fixture_chunks_retain_exact_arabic_text():
+    """The actual Phase 0 demo fixture, ingested for real through the
+    real (now heading-aware) ingestion pipeline -- not a synthetic
+    snippet. The fixture has multiple headings, so it now splits into
+    several chunks (not one blob, as it did pre-widening); what matters
+    is that the Arabic section's text survives parsing, chunking, and
+    storage byte-for-byte, not that the whole file reconstructs as a
+    single string."""
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     try:
-        await _ingest(org_id, "bilingual-brd-feature", BILINGUAL_BRD)
-        stored = await _fetch_content(org_id, "bilingual-brd-feature")
-        assert stored == BILINGUAL_BRD
+        async with SessionLocal() as session:
+            async with session.begin():
+                result = await ingest(session, org_id, "bilingual-brd-feature", "Bilingual Demo BRD", BILINGUAL_BRD)
+        assert result["chunks_total"] > 1  # confirms heading-based splitting actually happened
+
+        chunks = await _fetch_chunks(org_id, "bilingual-brd-feature")
+        arabic_chunk = next(c for c in chunks if "العربية" in c)
+        original_arabic_paragraph = next(
+            line for line in BILINGUAL_BRD.splitlines() if line.startswith("> يجب")
+        )
+        assert original_arabic_paragraph.removeprefix("> ") in arabic_chunk
     finally:
         await _cleanup(org_id)
 
@@ -117,11 +89,15 @@ async def test_negative_different_arabic_content_is_not_treated_as_a_duplicate()
     because of some encoding quirk in the hash computation."""
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     try:
-        first = await _ingest(org_id, "feature", "النص الأول للاختبار.")
-        second = await _ingest(org_id, "feature", "النص الثاني، وهو مختلف تمامًا.")
-        assert first["embedded"] is True
-        assert second["embedded"] is True
-        assert first["chunk_id"] != second["chunk_id"]
+        async with SessionLocal() as session:
+            async with session.begin():
+                first = await ingest(session, org_id, "feature", "Doc A", "النص الأول للاختبار.")
+        async with SessionLocal() as session:
+            async with session.begin():
+                second = await ingest(session, org_id, "feature", "Doc B", "النص الثاني، وهو مختلف تمامًا.")
+        assert first["skipped"] is False
+        assert second["skipped"] is False
+        assert first["document_id"] != second["document_id"]
     finally:
         await _cleanup(org_id)
 
@@ -140,9 +116,11 @@ async def test_edge_mixed_rtl_ltr_and_combining_diacritics_round_trip():
     org_id = f"test-org-{uuid.uuid4().hex[:8]}"
     mixed = "Minimum age (الحد الأدنى للعمر) is 18 عامًا — enforced at request time, not submission review."
     try:
-        await _ingest(org_id, "mixed-feature", mixed)
-        stored = await _fetch_content(org_id, "mixed-feature")
-        assert stored == mixed
+        async with SessionLocal() as session:
+            async with session.begin():
+                await ingest(session, org_id, "mixed-feature", "Mixed RTL/LTR Doc", mixed)
+        chunks = await _fetch_chunks(org_id, "mixed-feature")
+        assert chunks == [mixed]
     finally:
         await _cleanup(org_id)
 
@@ -161,12 +139,12 @@ async def test_edge_mixed_rtl_ltr_and_combining_diacritics_round_trip():
 @pytest.mark.asyncio
 async def test_regression_doc_hash_is_stable_for_non_ascii_content():
     """hashlib operates on raw bytes, so this should trivially hold --
-    but delta-hash (M0.6) is the one mechanism in this pipeline whose
-    entire job is hash-equality, and Phase 0 is exactly where i18n
-    content starts flowing through it for the first time. An explicit
-    guard here is cheap insurance against a future encoding-aware
-    "helpful" change (e.g. NFC/NFD normalization) silently breaking
-    delta-hash for non-Latin content specifically."""
+    but delta-hash is the one mechanism in this pipeline whose entire
+    job is hash-equality, and i18n content flows through it (now at
+    both the document and chunk level, since Phase 1's widening). An
+    explicit guard here is cheap insurance against a future encoding-
+    aware "helpful" change (e.g. NFC/NFD normalization) silently
+    breaking delta-hash for non-Latin content specifically."""
     content = "عامًا — 18"
     hash_a = hashlib.sha256(content.encode("utf-8")).hexdigest()
     hash_b = hashlib.sha256(content.encode("utf-8")).hexdigest()

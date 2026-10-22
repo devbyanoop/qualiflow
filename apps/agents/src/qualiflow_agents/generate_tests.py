@@ -40,10 +40,14 @@ class GenerateState(TypedDict):
 
 
 async def retrieve_context(state: GenerateState) -> dict:
-    """No real search yet (that's Phase 1's hybrid search + reranker,
-    §5.2) — just fetch the one chunk stored for this org/feature.
-    Proves the retrieval wiring before there's more than one chunk to
-    choose between."""
+    """Widened for real multi-chunk documents (Phase 1 step 1,
+    apps/knowledge's ingestion.py): a feature can now have many chunks
+    across one or more documents, not M0.6's single chunk. This still
+    isn't real search -- every chunk for the org/feature is fetched and
+    joined, in document/heading order, no ranking or relevance
+    filtering. True hybrid search + reranker (plan §5.2) is the next
+    sub-step, which will replace this with an actual top-k retrieval
+    instead of "everything, concatenated"."""
     async with engine.connect() as conn:
         await conn.execute(
             text("SELECT set_config('app.current_org_id', :org_id, true)"), {"org_id": state["org_id"]}
@@ -51,18 +55,19 @@ async def retrieve_context(state: GenerateState) -> dict:
         result = await conn.execute(
             text(
                 "SELECT content FROM knowledge_chunks "
-                "WHERE org_id = :org_id AND feature_id = :feature_id LIMIT 1"
+                "WHERE org_id = :org_id AND feature_id = :feature_id "
+                "ORDER BY doc_id, chunk_index"
             ),
             {"org_id": state["org_id"], "feature_id": state["feature_id"]},
         )
-        row = result.first()
+        rows = result.all()
 
-    if row is None:
+    if not rows:
         raise ChunkNotFoundError(
             f"No knowledge chunk for org_id={state['org_id']!r} feature_id={state['feature_id']!r}. "
             "Ingest one via apps/knowledge's /ingest first."
         )
-    return {"retrieved_chunk": row.content}
+    return {"retrieved_chunk": "\n\n".join(row.content for row in rows)}
 
 
 def draft_manual_cases(state: GenerateState) -> dict:

@@ -11,6 +11,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0",
     "psycopg[binary]>=3.2",
     "pgvector>=0.3",
+    "docling>=2.0",
+    "python-multipart>=0.0.12",
 ]
 
 [dependency-groups]
