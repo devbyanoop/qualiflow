@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "QualiFlow",
+    "tagline": "AI-native test automation, built in the open.",
+    "status": "Walking Skeleton complete — UI shell in progress (Phase 0).",
+    "description": "This page exists to prove one thing: every string on it is externalized, and the layout works correctly in both left-to-right and right-to-left locales. The real dashboard comes later."
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "ar": "العربية"
+  }
+}

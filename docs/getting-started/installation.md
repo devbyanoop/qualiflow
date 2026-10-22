@@ -85,3 +85,12 @@ curl http://localhost:8002/healthz   # {"status":"ok"}
 ```
 
 All three healthy means you're ready for the [quickstart](quickstart.md).
+
+## Optional: the web UI shell
+
+```bash
+pnpm install
+pnpm --filter qualiflow-web dev   # port 3000
+```
+
+Phase 0 scope only — i18n routing (English + Arabic/RTL) and a placeholder page, no backend integration yet. See `apps/web/README.md`.

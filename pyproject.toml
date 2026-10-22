@@ -5,6 +5,9 @@ requires-python = ">=3.11"
 
 [tool.uv.workspace]
 members = ["apps/*", "packages/*"]
+# apps/web is a pnpm/Next.js app, not a uv member -- it has no
+# pyproject.toml and never will.
+exclude = ["apps/web"]
 
 [tool.uv]
 # This root isn't installed as a package itself — it just defines the
