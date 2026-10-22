@@ -60,6 +60,7 @@ nav:
       - "0004 — Postgres RLS tenant isolation": adr/0004-postgres-rls-tenant-isolation.md
       - "0005 — Self-hosted embeddings": adr/0005-self-hosted-embeddings.md
       - "0006 — Skip Langfuse": adr/0006-skip-langfuse.md
+      - "0007 — Environment classification": adr/0007-environment-classification.md
   - Project:
       - Roadmap & status: project/roadmap.md
       - FAQ: project/faq.md

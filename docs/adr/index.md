@@ -10,3 +10,4 @@ Short records of significant technical decisions: what was decided, why, what el
 | [0004](0004-postgres-rls-tenant-isolation.md) | Postgres RLS + a non-superuser app role for tenant isolation | Accepted |
 | [0005](0005-self-hosted-embeddings.md) | Self-hosted embeddings, not a paid API | Accepted |
 | [0006](0006-skip-langfuse.md) | Skip Langfuse for now | Accepted |
+| [0007](0007-environment-classification.md) | Environment classification, production blocked by default | Accepted |

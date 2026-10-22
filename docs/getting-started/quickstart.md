@@ -29,11 +29,12 @@ curl -s -X POST http://localhost:8002/targets -H "Content-Type: application/json
     "org_id": "my-org",
     "feature_id": "my-feature",
     "base_url": "http://localhost:4000",
-    "openapi_spec": "<the target app'\''s real OpenAPI 3.0.3 spec, as text>"
+    "openapi_spec": "<the target app'\''s real OpenAPI 3.0.3 spec, as text>",
+    "environment": "dev"
   }'
 ```
 
-Returns `{"target_id": ...}`. No credentials here — those go in step 4's `/review` call instead, per request, never persisted.
+Returns `{"target_id": ...}`. `environment` is required — one of `production`, `pre-production`, `uat`, `qa`, `dev` — and has no default; a `production` target blocks automation by default (see [ADR 0007](../adr/0007-environment-classification.md)) unless `/review` is called with `"allow_production": true`. No credentials here — those go in step 4's `/review` call instead, per request, never persisted.
 
 ## 3. Generate a manual test case
 

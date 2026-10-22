@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -14,7 +15,7 @@ from .evidence import store_evidence
 from .generate_tests import ChunkNotFoundError, build_graph
 from .hello_graph import hello_graph
 from .settings import settings
-from .targets import TargetNotFoundError, get_target
+from .targets import ProductionBlockedError, TargetNotFoundError, check_production_guardrail, get_target
 
 
 @asynccontextmanager
@@ -78,11 +79,22 @@ async def generate(req: GenerateRequest, request: Request) -> dict:
     return {"thread_id": thread_id, "pending_review": interrupts[0].value}
 
 
+TargetEnvironment = Literal["production", "pre-production", "uat", "qa", "dev"]
+
+
 class TargetAppRequest(BaseModel):
     org_id: str
     feature_id: str
     base_url: str
     openapi_spec: str
+    # §8.5's first safety guardrail: every target must be explicitly
+    # classified -- no default, so a caller can't accidentally land a
+    # target in "dev" (and get automated against freely) when it was
+    # actually production. The Pydantic Literal rejects a bad value at
+    # the API layer; the DB's CHECK constraint (migration
+    # b2a7c419e3d5) rejects it a second way, for any caller that skips
+    # this endpoint.
+    environment: TargetEnvironment
 
 
 @app.post("/targets")
@@ -100,8 +112,8 @@ async def register_target(req: TargetAppRequest) -> dict:
         )
         await conn.execute(
             text(
-                "INSERT INTO target_apps (id, org_id, feature_id, base_url, openapi_spec) "
-                "VALUES (:id, :org_id, :feature_id, :base_url, :openapi_spec)"
+                "INSERT INTO target_apps (id, org_id, feature_id, base_url, openapi_spec, environment) "
+                "VALUES (:id, :org_id, :feature_id, :base_url, :openapi_spec, :environment)"
             ),
             {
                 "id": target_id,
@@ -109,6 +121,7 @@ async def register_target(req: TargetAppRequest) -> dict:
                 "feature_id": req.feature_id,
                 "base_url": req.base_url,
                 "openapi_spec": req.openapi_spec,
+                "environment": req.environment,
             },
         )
     return {"target_id": target_id}
@@ -122,6 +135,13 @@ class ReviewRequest(BaseModel):
     # Required for approve/edit -- never persisted, used for this
     # request only.
     target_auth: dict | None = None
+    # §8.5: production targets are blocked by default. This is the
+    # explicit opt-in the plan calls for -- but it only lifts the
+    # block, it does NOT verify the generated script is read-only.
+    # Enforcing that (inspecting the script for write-shaped HTTP
+    # calls) is §8.5's separate "Action policies" guardrail, not built
+    # yet -- see docs/adr/0007-environment-classification.md.
+    allow_production: bool = False
 
 
 @app.post("/review/{thread_id}")
@@ -178,6 +198,11 @@ async def review(thread_id: str, req: ReviewRequest, request: Request) -> dict:
             target = await get_target(org_id, result["feature_id"])
         except TargetNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from None
+
+        try:
+            check_production_guardrail(target, req.allow_production)
+        except ProductionBlockedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from None
 
         # api_automation_agent, M0.9/M0.10. Both generate_pytest_script
         # (litellm.completion, including the resolver sub-step) and

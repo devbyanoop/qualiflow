@@ -32,13 +32,13 @@ CASE = {
 }
 
 
-async def _seed_target(org_id: str, feature_id: str) -> None:
+async def _seed_target(org_id: str, feature_id: str, environment: str = "dev") -> None:
     engine = create_async_engine(settings.database_url_admin)
     async with engine.begin() as conn:
         await conn.execute(
             text(
-                "INSERT INTO target_apps (id, org_id, feature_id, base_url, openapi_spec) "
-                "VALUES (:id, :org_id, :feature_id, :base_url, :openapi_spec)"
+                "INSERT INTO target_apps (id, org_id, feature_id, base_url, openapi_spec, environment) "
+                "VALUES (:id, :org_id, :feature_id, :base_url, :openapi_spec, :environment)"
             ),
             {
                 "id": str(uuid.uuid4()),
@@ -46,6 +46,7 @@ async def _seed_target(org_id: str, feature_id: str) -> None:
                 "feature_id": feature_id,
                 "base_url": BASE_URL,
                 "openapi_spec": OPENAPI_SPEC,
+                "environment": environment,
             },
         )
     await engine.dispose()
